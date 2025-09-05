@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        /* Keyframe for loader spin animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1d72b8;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin .8s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <div class="relative max-w-2xl mx-auto p-8 bg-white rounded-xl shadow-xl">
+        <div id="userMenu" class="absolute top-5 right-5 z-50">
+            <div id="userIcon" class="text-3xl cursor-pointer select-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </div>
+            <div id="dropdownMenu" class="hidden absolute right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+                <div class="px-4 py-2.5 cursor-pointer text-base select-none hover:bg-gray-100" id="menuGebruikersnaam"></div>
+                <div class="px-4 py-2.5 cursor-pointer text-base select-none hover:bg-gray-100" id="menuGebruikers">Gebruikers beheren</div>
+                <div class="px-4 py-2.5 cursor-pointer text-base select-none hover:bg-gray-100" onclick="logout()">Uitloggen</div>
+            </div>
+        </div>
+
+        <h1 class="text-4xl font-extrabold text-gray-800 text-center mb-8">Dashboard</h1>
+        
+        <nav class="mb-8 border-b border-gray-200 pb-4">
+            <ul class="flex justify-center space-x-6">
+                </ul>
+        </nav>
+
+        <div id="generalMessage" class="mt-4 mb-8 text-center text-red-500 font-medium hidden"></div>
+
+        <div id="dagenLijst" class="space-y-4">
+            <div class="text-center text-gray-500 py-4">Laden donderdagen...</div>
+        </div>
+    </div>
+
+    <div id="customModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 hidden">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-sm w-11/12 text-center">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-5"></h3>
+            <div id="modalMessage" class="mb-6 text-gray-700 leading-relaxed text-left">
+                </div>
+            <div id="modalButtons" class="flex justify-center gap-4">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
+        let userRole = localStorage.getItem('userRole') || '';
+        let resolveModalPromise;
+
+        async function checkAdminStatus() {
+            try {
+                const response = await fetch(`${API_URL}/users`, { credentials: 'include' });
+                if (response.status === 401 || response.status === 403) {
+                    document.getElementById('generalMessage').textContent = 'Toegang geweigerd. U moet ingelogd zijn als beheerder.';
+                    document.getElementById('generalMessage').classList.remove('hidden');
+                    setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+                    return false;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                document.getElementById('generalMessage').classList.add('hidden');
+                return true;
+            } catch (error) {
+                document.getElementById('generalMessage').textContent = `Fout bij controleren admin status: ${error.message}. Probeer opnieuw.`;
+                document.getElementById('generalMessage').classList.remove('hidden');
+                return false;
+            }
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch(`${API_URL}/logout`, { method: 'POST', credentials: 'include' });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                showModal('Succes', data.message);
+                localStorage.removeItem('gebruikersnaam');
+                localStorage.removeItem('userRole');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            } catch (error) {
+                showModal('Fout', `Uitloggen mislukt: ${error.message}`);
+            }
+        }
+
+        function alleDonderdagen() {
+            const data = [];
+            let datum = new Date(Date.UTC(2025, 0, 2));
+            const eindDatum = new Date(Date.UTC(2025, 11, 31));
+            while (datum <= eindDatum) {
+                data.push(datum.toISOString().split('T')[0]);
+                datum.setUTCDate(datum.getUTCDate() + 7);
+            }
+            return data;
+        }
+
+        async function fetchHost(datum) {
+            try {
+                const res = await fetch(`${API_URL}/host/${datum}`, { credentials: 'include' });
+                if (!res.ok) return 'Niet ingesteld';
+                const data = await res.json();
+                return data.host || 'Niet ingesteld';
+            } catch (error) {
+                return 'Niet ingesteld';
+            }
+        }
+
+        async function fetchAanwezigheid(datum) {
+            try {
+                const res = await fetch(`${API_URL}/aanwezigheid/datum/${datum}`, { credentials: 'include' });
+                if (!res.ok) return [];
+                return await res.json();
+            } catch (error) {
+                return [];
+            }
+        }
+
+        async function voegAanwezigheidToe(datum, targetUsername) {
+            try {
+                const res = await fetch(`${API_URL}/aanwezigheid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gebruikersnaam: targetUsername, datum, aanwezig: true }),
+                    credentials: 'include'
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    showModal('Fout', `Kon aanwezigheid niet toevoegen: ${errorData.message}`);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                showModal('Fout', 'Er is een algemene fout opgetreden bij het toevoegen van aanwezigheid.');
+                return false;
+            }
+        }
+
+        async function verwijderAanwezigheid(datum, targetUsername) {
+            try {
+                const res = await fetch(`${API_URL}/aanwezigheid`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gebruikersnaam: targetUsername, datum }),
+                    credentials: 'include'
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    showModal('Fout', `Kon aanwezigheid niet verwijderen: ${errorData.message}`);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                showModal('Fout', 'Er is een algemene fout opgetreden bij het verwijderen van aanwezigheid.');
+                return false;
+            }
+        }
+        
+        async function zetHost(datum, nieuweHost) {
+            try {
+                const res = await fetch(`${API_URL}/host/update/${datum}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host: nieuweHost }),
+                    credentials: 'include'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    showModal('Fout', 'Host wijzigen niet toegestaan: ' + (err.message || 'Onbekende fout.'));
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                showModal('Fout', 'Fout bij opslaan host.');
+                return false;
+            }
+        }
+        
+        async function fetchAllUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users`, { credentials: 'include' });
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return await res.json(); 
+            } catch (error) {
+                showModal('Fout', `Fout bij laden gebruikers: ${error.message}`);
+                return [];
+            }
+        }
+
+        async function toggleUserBlockStatus(username, isBlocked) {
+            const endpoint = isBlocked ? 'unblock' : 'block';
+            const action = isBlocked ? 'deblokkeren' : 'blokkeren';
+            try {
+                const res = await fetch(`${API_URL}/users/${username}/${endpoint}`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Onbekende fout.');
+                }
+                showModal('Succes', `Gebruiker "${username}" is succesvol ${action}d.`);
+                renderAndShowUserList(); // Herlaad de lijst
+            } catch (error) {
+                showModal('Fout', `Fout bij ${action} van gebruiker: ${error.message}`);
+            }
+        }
+
+        async function renderAndShowUserList() {
+            showModal('Gebruikers laden', '<div class="loader"></div>');
+            const users = await fetchAllUsers();
+            if (users.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-none p-0 m-0';
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.className = 'py-2 border-b border-dashed border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center last:border-b-0';
+                    
+                    const userDetails = document.createElement('div');
+                    userDetails.className = 'flex flex-col text-left';
+
+                    const usernameSpan = document.createElement('span');
+                    usernameSpan.className = 'font-semibold text-gray-800';
+                    usernameSpan.textContent = user.username;
+                    if (user.is_blocked) {
+                        usernameSpan.classList.add('text-red-500');
+                        usernameSpan.textContent += ' (Geblokkeerd)';
+                    } else if (user.role === 'admin') {
+                        usernameSpan.classList.add('text-blue-600');
+                        usernameSpan.textContent += ' (Admin)';
+                    }
+                    userDetails.appendChild(usernameSpan);
+
+                    const lastLoginSpan = document.createElement('span');
+                    lastLoginSpan.className = 'text-xs text-gray-600 mt-1';
+                    if (user.last_login) {
+                        const lastLoginDate = new Date(user.last_login);
+                        const formattedLastLogin = lastLoginDate.toLocaleDateString('nl-NL', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        lastLoginSpan.textContent = `Laatste inlog: ${formattedLastLogin}`;
+                    } else {
+                        lastLoginSpan.textContent = 'Nog niet ingelogd';
+                    }
+                    userDetails.appendChild(lastLoginSpan);
+                    li.appendChild(userDetails);
+
+                    const button = document.createElement('button');
+                    button.className = `px-3 py-1.5 rounded-md text-sm font-semibold transition-colors duration-200 mt-2 sm:mt-0`;
+                    if (user.is_blocked) {
+                        button.textContent = 'Deblokkeer';
+                        button.classList.add('bg-green-600', 'text-white', 'hover:bg-green-700');
+                    } else {
+                        button.textContent = 'Blokkeer';
+                        button.classList.add('bg-red-600', 'text-white', 'hover:bg-red-700');
+                    }
+                    button.onclick = () => {
+                        toggleUserBlockStatus(user.username, user.is_blocked);
+                    };
+                    li.appendChild(button);
+                    ul.appendChild(li);
+                });
+                showModal('Gebruikers beheren', ul);
+            } else {
+                showModal('Geen gebruikers', 'Geen gebruikers gevonden.');
+            }
+        }
+
+        async function renderThursdayDetailsContent(itemElement, datum) {
+            const detailsDiv = itemElement.querySelector('.thursday-details');
+            if (!detailsDiv) return;
+            detailsDiv.innerHTML = '<div class="loader"></div>';
+            const latestHost = await fetchHost(datum);
+            const latestAttendees = await fetchAanwezigheid(datum);
+            if (detailsDiv.querySelector('.loader')) {
+                detailsDiv.innerHTML = '';
+            }
+            detailsDiv.innerHTML = `
+                <h3 class="text-xl font-semibold text-gray-700 mb-4 text-left">Beheer details</h3>
+                <div class="mb-4">
+                    <label for="editHostInput-${datum}" class="block text-left text-sm font-medium text-gray-700 mb-1">Host wijzigen:</label>
+                    <input type="text" id="editHostInput-${datum}" value="${latestHost === 'Niet ingesteld' ? '' : latestHost}" placeholder="Nieuwe host" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="saveHostBtn-${datum}" class="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out mt-2">Opslaan Host</button>
+                </div>
+                <div class="mb-4">
+                    <label for="addAttendeeInput-${datum}" class="block text-left text-sm font-medium text-gray-700 mb-1">Gebruiker toevoegen:</label>
+                    <input type="text" id="addAttendeeInput-${datum}" placeholder="Gebruikersnaam" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="addAttendeeBtn-${datum}" class="bg-blue-600 text-white font-semibold py-1.5 px-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out mt-2">Voeg toe</button>
+                </div>
+                <div class="mb-4">
+                    <p class="text-left text-sm font-medium text-gray-700 mb-1">Aanwezigen:</p>
+                    <ul id="editAttendeesList-${datum}" class="list-disc list-inside text-left text-gray-700 max-h-40 overflow-y-auto border border-gray-200 p-2 rounded-md">
+                        ${latestAttendees.length > 0 ? latestAttendees.map(att => `<li>${att} <button class="ml-2 text-red-600 hover:text-red-800 text-xs" data-date="${datum}" data-username="${att}">Verwijder</button></li>`).join('') : '<li>Geen aanwezigen</li>'}
+                    </ul>
+                </div>
+            `;
+            const saveHostBtn = document.getElementById(`saveHostBtn-${datum}`);
+            saveHostBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const newHost = document.getElementById(`editHostInput-${datum}`).value.trim();
+                const success = await zetHost(datum, newHost);
+                if (success) {
+                    await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
+                }
+            });
+            const addAttendeeBtn = document.getElementById(`addAttendeeBtn-${datum}`);
+            addAttendeeBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const newAttendee = document.getElementById(`addAttendeeInput-${datum}`).value.trim();
+                if (!newAttendee) {
+                    showModal('Waarschuwing', 'Vul een gebruikersnaam in.');
+                    return;
+                }
+                const success = await voegAanwezigheidToe(datum, newAttendee);
+                if (success) {
+                    await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
+                    document.getElementById(`addAttendeeInput-${datum}`).value = '';
+                }
+            });
+            detailsDiv.querySelectorAll('[data-date][data-username]').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const confirmed = await showConfirm('Bevestigen', `Weet je zeker dat je "${button.dataset.username}" wilt verwijderen van ${button.dataset.date}?`);
+                    if (confirmed) {
+                        const success = await verwijderAanwezigheid(button.dataset.date, button.dataset.username);
+                        if (success) {
+                            await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
+                        }
+                    }
+                });
+            });
+        }
+
+        async function toggleThursdayDetails(itemElement, datum) {
+            let detailsDiv = itemElement.querySelector('.thursday-details');
+            const chevronIcon = itemElement.querySelector('.chevron-icon');
+            if (detailsDiv && !detailsDiv.classList.contains('hidden')) {
+                detailsDiv.classList.add('hidden');
+                if (chevronIcon) chevronIcon.textContent = '▼';
+            } else {
+                detailsDiv.classList.remove('hidden');
+                await renderThursdayDetailsContent(itemElement, datum);
+                if (chevronIcon) chevronIcon.textContent = '▲';
+            }
+        }
+        
+        function showModal(title, messageContent, buttons = []) {
+            const modalOverlay = document.getElementById('customModal');
+            document.getElementById('modalTitle').textContent = title;
+            const modalMessageDiv = document.getElementById('modalMessage');
+            modalMessageDiv.innerHTML = '';
+            if (typeof messageContent === 'string') modalMessageDiv.textContent = messageContent;
+            else if (messageContent instanceof HTMLElement) modalMessageDiv.appendChild(messageContent);
+            const modalButtons = document.getElementById('modalButtons');
+            modalButtons.innerHTML = '';
+            if (buttons.length > 0) {
+                buttons.forEach(btn => {
+                    const buttonElement = document.createElement('button');
+                    buttonElement.textContent = btn.text;
+                    buttonElement.className = btn.className;
+                    buttonElement.onclick = btn.onclick;
+                    modalButtons.appendChild(buttonElement);
+                });
+            } else {
+                const okButton = document.createElement('button');
+                okButton.textContent = 'OK';
+                okButton.className = 'bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 ease-in-out';
+                okButton.onclick = () => { modalOverlay.classList.add('hidden'); };
+                modalButtons.appendChild(okButton);
+            }
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function showConfirm(title, message) {
+            return new Promise(resolve => {
+                resolveModalPromise = resolve;
+                const modalOverlay = document.getElementById('customModal');
+                document.getElementById('modalTitle').textContent = title;
+                const modalMessageDiv = document.getElementById('modalMessage');
+                modalMessageDiv.innerHTML = '';
+                modalMessageDiv.textContent = message;
+                const modalButtons = document.getElementById('modalButtons');
+                modalButtons.innerHTML = '';
+                const confirmButton = document.createElement('button');
+                confirmButton.textContent = 'Ja';
+                confirmButton.className = 'bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out';
+                confirmButton.onclick = () => { modalOverlay.classList.add('hidden'); resolveModalPromise(true); };
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Annuleren';
+                cancelButton.className = 'bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-500 transition duration-300 ease-in-out';
+                cancelButton.onclick = () => { modalOverlay.classList.add('hidden'); resolveModalPromise(false); };
+                modalButtons.appendChild(confirmButton);
+                modalButtons.appendChild(cancelButton);
+                modalOverlay.classList.remove('hidden');
+            });
+        }
+        
+        async function createAccordionItem(datum, isVerleden) {
+            const acc = document.createElement('div');
+            const aanwezigen = await fetchAanwezigheid(datum);
+            const currentHost = await fetchHost(datum);
+            const borderClass = 'border-gray-200';
+            const cursorClass = 'cursor-pointer';
+            acc.className = `bg-white py-2 px-4 rounded-lg shadow-md flex flex-col gap-4 ${borderClass} ${isVerleden ? 'opacity-75' : ''} ${cursorClass} relative overflow-hidden transition-colors duration-300 ease-in-out`;
+            const dateObj = new Date(datum + 'T00:00:00Z');
+            const formattedWeekday = dateObj.toLocaleDateString('nl-NL', { weekday: 'long' });
+            const capitalizedWeekday = formattedWeekday.charAt(0).toUpperCase() + formattedWeekday.slice(1);
+            acc.innerHTML = `
+                <div class="flex items-center gap-4 w-full">
+                    <div class="w-16 text-center flex-shrink-0">
+                        <div class="bg-red-500 text-white py-1 text-xs font-bold uppercase rounded-t-lg">${dateObj.toLocaleDateString('nl-NL', { month: 'short' }).toUpperCase()}</div>
+                        <div class="bg-white text-gray-800 py-1 text-2xl font-bold rounded-b-lg border border-gray-200">${dateObj.getUTCDate()}</div>
+                    </div>
+                    <div class="flex-grow text-left">
+                        <p class="text-lg font-semibold text-gray-800 hidden sm:block">${capitalizedWeekday} ${dateObj.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}</p>
+                        <p class="text-lg font-semibold text-gray-800 block sm:hidden">${capitalizedWeekday}</p>
+                        <p class="text-sm text-gray-600">Host: <span class="font-bold">${currentHost}</span></p>
+                        <p class="text-sm text-gray-600 hidden sm:block">Aanwezigen: ${aanwezigen.length > 0 ? aanwezigen.join(', ') : 'Geen'}</p>
+                        <p class="text-sm text-gray-600 block sm:hidden">Aanwezigen: ${aanwezigen.length}</p>
+                    </div>
+                    <div class="flex-shrink-0 text-gray-500 text-2xl chevron-icon">▼</div>
+                </div>
+                <div class="thursday-details hidden w-full mt-4 pt-4 border-t border-gray-200"></div>
+            `;
+            acc.addEventListener('click', (event) => {
+                const target = event.target;
+                const isInteractiveElement = target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.closest('button');
+                if (!isInteractiveElement) {
+                    toggleThursdayDetails(acc, datum);
+                }
+            });
+            return acc;
+        }
+
+        async function loadThursdaysOverview() {
+            const dagenLijstDiv = document.getElementById('dagenLijst');
+            dagenLijstDiv.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader"></div> Laden donderdagen...</div>';
+            const allThursdays = alleDonderdagen();
+            const vandaag = new Date();
+            vandaag.setHours(0,0,0,0);
+            const vandaagStr = vandaag.toISOString().split('T')[0];
+            const geschiedenis = allThursdays.filter(d => d < vandaagStr);
+            const toekomst = allThursdays.filter(d => d >= vandaagStr);
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'space-y-4';
+            try {
+                if (geschiedenis.length) {
+                    const historySection = document.createElement('div');
+                    historySection.className = `bg-white p-4 rounded-lg shadow-md flex flex-col gap-4 border border-gray-200 cursor-pointer mb-4`;
+                    historySection.innerHTML = `
+                        <div class="flex items-center gap-4 w-full">
+                            <div class="flex-grow text-center">
+                                <p class="text-lg font-semibold text-gray-800">Geschiedenis</p>
+                            </div>
+                            <div class="flex-shrink-0 text-gray-500 text-2xl chevron-icon-history">▼</div>
+                        </div>
+                        <div class="thursday-details hidden w-full mt-4 pt-4 border-t border-gray-200 history-content"></div>
+                    `;
+                    tempDiv.appendChild(historySection);
+                    const historyHeader = historySection.querySelector('.flex.items-center');
+                    const historyContent = historySection.querySelector('.history-content');
+                    const historyChevron = historySection.querySelector('.chevron-icon-history');
+                    historyHeader.addEventListener('click', async (event) => {
+                        event.stopPropagation(); 
+                        if (historyContent.classList.contains('hidden')) {
+                            historyContent.classList.remove('hidden');
+                            historyChevron.textContent = '▲';
+                            historyContent.innerHTML = '<div class="loader"></div>';
+                            const historyItemsContainer = document.createElement('div');
+                            historyItemsContainer.className = 'space-y-4';
+                            for (const datum of geschiedenis.reverse()) {
+                                const accItem = await createAccordionItem(datum, true);
+                                historyItemsContainer.appendChild(accItem);
+                            }
+                            historyContent.innerHTML = '';
+                            historyContent.appendChild(historyItemsContainer);
+                        } else {
+                            historyContent.classList.add('hidden');
+                            historyChevron.textContent = '▼';
+                            historyContent.innerHTML = '';
+                        }
+                    });
+                }
+                for (const datum of toekomst) {
+                    const acc = await createAccordionItem(datum, false);
+                    tempDiv.appendChild(acc);
+                }
+                dagenLijstDiv.innerHTML = '';
+                dagenLijstDiv.appendChild(tempDiv);
+                if (allThursdays.length === 0) {
+                    dagenLijstDiv.innerHTML = '<div class="text-center text-gray-500 py-4">Geen donderdagen gevonden voor 2025.</div>';
+                }
+            } catch (error) {
+                dagenLijstDiv.innerHTML = '<div class="text-center text-red-500 py-4">Fout bij het laden van donderdagen. Probeer later opnieuw.</div>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAdminUser = await checkAdminStatus();
+            if (!isAdminUser) {
+                return;
+            }
+            loadThursdaysOverview();
+            const userIcon = document.getElementById('userIcon');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const menuGebruikersnaam = document.getElementById('menuGebruikersnaam');
+            const menuGebruikers = document.getElementById('menuGebruikers');
+            if (menuGebruikersnaam) {
+                menuGebruikersnaam.textContent = gebruikersnaam;
+            }
+            if (userIcon && dropdownMenu) {
+                userIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('hidden');
+                });
+            }
+            if (menuGebruikers) {
+                menuGebruikers.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (dropdownMenu) dropdownMenu.classList.add('hidden');
+                    renderAndShowUserList();
+                });
+            }
+            document.addEventListener('click', (e) => {
+                if (dropdownMenu && userIcon && !dropdownMenu.contains(e.target) && !userIcon.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
