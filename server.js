@@ -10,6 +10,32 @@ const bcrypt = require('bcrypt'); // Import bcrypt
 const nodemailer = require('nodemailer'); // Import nodemailer
 
 const app = express();
+// CORS configuratie
+const allowedOrigins = [
+  'https://donderdagborrel.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:5500'
+];
+
+if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+  allowedOrigins.push(`https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
+}
+
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+}));
+// Statische bestanden uit de projectroot
+app.use(express.static(path.join(__dirname)));
+
+
+// Preflight toestaan
+app.options('*', cors());
+
+
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -19,9 +45,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-// Serve statische bestanden uit de projectroot
-app.use(express.static(path.join(__dirname)));
-
 
 // Sessie-configuratie
 app.use(session({
@@ -887,14 +910,14 @@ app.listen(port, () => {
         console.warn('--- Verander dit direct in een sterk wachtwoord in uw .env bestand. ---\n');
     }
 });
-
-// Homepage expliciet serveren
 // Alias-routes voor losse HTML-pagina's
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
 app.get('/statistieken', (req, res) => res.sendFile(path.join(__dirname, 'statistieken.html')));
 app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'reset-password.html')));
 
+// Homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
