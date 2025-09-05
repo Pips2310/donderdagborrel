@@ -2,6 +2,7 @@
 require('dotenv').config(); // Load environment variables from .env file
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
@@ -18,6 +19,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// Serve statische bestanden uit de projectroot
+app.use(express.static(path.join(__dirname)));
+
 
 // Sessie-configuratie
 app.use(session({
@@ -882,4 +886,15 @@ app.listen(port, () => {
         console.warn('\n--- WAARSCHUWING: ADMIN_PASSWORD is niet sterk of is standaard ingesteld in .env! ---');
         console.warn('--- Verander dit direct in een sterk wachtwoord in uw .env bestand. ---\n');
     }
+});
+
+// Homepage expliciet serveren
+// Alias-routes voor losse HTML-pagina's
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
+app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
+app.get('/statistieken', (req, res) => res.sendFile(path.join(__dirname, 'statistieken.html')));
+app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'reset-password.html')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
