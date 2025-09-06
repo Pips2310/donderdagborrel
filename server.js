@@ -9,8 +9,6 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 
-
-
 // Database initialiseren
 let dbPath;
 
@@ -27,6 +25,58 @@ const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error connecting to database:', err.message);
     } else {
+        console.log(`Connected to SQLite at: ${dbPath}`);
+    }
+});
+
+
+
+
+
+
+
+
+
+// Als we draaien op Render → gebruik in-memory SQLite (alleen voor testen / geen persistente opslag)
+if (process.env.RENDER) {
+    console.log("Running on Render → using in-memory SQLite database (test only, non-persistent).");
+    dbPath = ':memory:';
+} else {
+    // Lokaal: persistente SQLite in ./.data/data.db
+    dbPath = path.join(__dirname, '.data', 'data.db');
+}
+
+    if (err) {
+        console.error('Error connecting to database:', err.message);
+    } else {
+        console.log(`Connected to SQLite at: ${dbPath}`);
+    }
+});
+
+
+// Op Render → gebruik in-memory SQLite (test-only, geen persistente opslag)
+// Lokaal → gebruik ./data/data.db
+if (process.env.RENDER) {
+    console.log("Running on Render → using in-memory SQLite database.");
+    dbPath = ':memory:';
+} else {
+    dbPath = path.join(__dirname, '.data', 'data.db');
+}
+} else {
+        console.log(`Connected to SQLite at: ${dbPath}`);
+    }
+});
+
+
+// Als we draaien op Render → gebruik in-memory SQLite (alleen voor testen / geen persistente opslag)
+if (process.env.RENDER) {
+    console.log("Running on Render → using in-memory SQLite database (test only, non-persistent).");
+    dbPath = ':memory:';
+} else {
+    // Lokaal: persistente SQLite in ./.data/data.db
+    dbPath = path.join(__dirname, '.data', 'data.db');
+}
+} else {
         console.log(`Connected to SQLite at: ${dbPath}`);
     }
 });
@@ -79,8 +129,6 @@ app.use(session({
     }
 }));
 
-// Database initialiseren (in .data map)
-let dbPath;
 
 // Als we draaien op Render → gebruik een tijdelijke in-memory DB
 if (process.env.RENDER) {
@@ -89,15 +137,11 @@ if (process.env.RENDER) {
 } else {
     dbPath = path.join(__dirname, '.data', 'data.db');
 }
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error connecting to database:', err.message);
-    } else {
+} else {
         console.log('Connected to the SQLite database.');
     }
 });
 
-// Database schema en admin user setup (unchanged)
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS aanwezigheid (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
