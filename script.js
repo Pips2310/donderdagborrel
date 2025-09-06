@@ -1,4 +1,3 @@
-// v2.0 - Aangepast voor Render en veiligheid
 // v1.13 2025-08-30 — Host-paneel verwijderd; links-swipe toont kroon binnen main (zonder 3e paneel)
 // v1.12 2025-08-30 — Visuele swipe-links animaties: calendar schuift weg, teksten naar links, crown schuift in met 'flikker'
 // v1.10 2025-08-30 — Swipe naar host-paneel alleen als host 'Niet bekend' is; live-drag naar rechts geblokkeerd indien host bekend
@@ -9,51 +8,67 @@
 // v1.4 2025-08-27 — voorstel B (accent-ring + puls)
 // v1.3 2025-02-25 — geschiedenis: transparante panel-bg
 // v1.2 2025-02-25 — kroon in geschiedenis
-const API_URL = '/api';
+const API_URL = 'http://localhost:3000/api';
 let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 let userRole = localStorage.getItem('userRole') || '';
-let resolveModalPromise;
+let resolveModalPromise; // Used for showConfirm modal
 
+/** Inline attendees with "+X meer" and modal for full list */
 function renderAttendeesInline(containerEl, names, opts = {}) {
-  const MAX_INLINE = opts.maxInline ?? 6;
+  const MAX_INLINE = opts.maxInline ?? 6; // show up to 6 inline
   if (!containerEl) return;
-  containerEl.innerHTML = '';
+  containerEl.innerHTML = ''; // reset
+
   if (!names || names.length === 0) {
     containerEl.textContent = 'Aanwezigen: Geen';
     return;
   }
+
   const shown = names.slice(0, MAX_INLINE);
   const rest = names.length - shown.length;
+
+  // Base text "Aanwezigen: A, B, C"
   const base = document.createElement('span');
   base.textContent = 'Aanwezigen: ' + shown.join(', ');
   containerEl.appendChild(base);
+
+  // “+X meer” button (if needed)
   if (rest > 0) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ml-1 underline text-blue-600 hover:text-blue-700';
     btn.textContent = `+${rest} meer`;
+
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       showAttendeesModal(names);
     });
     btn.addEventListener('mousedown', (e) => e.stopPropagation());
+
     containerEl.appendChild(btn);
   }
 }
 
+/** Render names-only for attendee panel with a single “+X meer” button (no duplicate) */
 function renderAttendeePanelNames(targetEl, names, opts = {}) {
   if (!targetEl) return;
   targetEl.innerHTML = '';
+
   const allNames = Array.isArray(names) ? names.slice() : [];
   const isMobile = (opts.forceMobile === true) || (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 639px)').matches);
+
   if (isMobile) {
+    // ===== MOBILE: 3 rijen × 3 kolommen, laatste cel = +X meer =====
     const rows = opts.rows ?? 3;
     const cols = opts.cols ?? 3;
-    const MAX_CELLS = opts.maxCells ?? (rows * cols);
+    const MAX_CELLS = opts.maxCells ?? (rows * cols); // standaard 9
+
     const list = document.createElement('ul');
     list.className = 'attendee-grid';
+
     if (allNames.length === 0) {
+      // Plaats de boodschap in de eerste cel en vul aan tot MAX_CELLS voor vaste hoogte
       const li = document.createElement('li');
       li.textContent = 'Geen aanwezigen.';
       list.appendChild(li);
@@ -65,13 +80,16 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
       targetEl.appendChild(list);
       return;
     }
+
     const needsMore = allNames.length > MAX_CELLS;
     const visibleCount = needsMore ? (MAX_CELLS - 1) : Math.min(allNames.length, MAX_CELLS);
+
     for (let i = 0; i < visibleCount; i++) {
       const li = document.createElement('li');
       li.textContent = allNames[i];
       list.appendChild(li);
     }
+
     if (needsMore) {
       const rest = allNames.length - visibleCount;
       const moreLi = document.createElement('li');
@@ -92,6 +110,8 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
       });
       list.appendChild(moreLi);
     }
+
+    // Vul tot exact MAX_CELLS voor vaste paneelhoogte
     let current = list.children.length;
     while (current < MAX_CELLS) {
       const filler = document.createElement('li');
@@ -99,18 +119,24 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
       list.appendChild(filler);
       current++;
     }
+
     targetEl.appendChild(list);
     return;
   }
+
+  // ===== DESKTOP (fallback): behoud bestaande inline-weergave met clamping =====
   const MAX_INLINE = opts.maxInline ?? 12;
   const shown = allNames.slice(0, MAX_INLINE);
   const rest = allNames.length - shown.length;
+
   const row = document.createElement('div');
   row.className = 'attendees-inline-row';
+
   const namesSpan = document.createElement('span');
   namesSpan.className = 'attendee-names-three-lines';
   namesSpan.textContent = shown.join(', ');
   row.appendChild(namesSpan);
+
   if (rest > 0) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -124,15 +150,19 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
     btn.addEventListener('mousedown', (e) => e.stopPropagation());
     row.appendChild(btn);
   }
+
   targetEl.appendChild(row);
 }
 
+
+/** Dedicated modal to show full attendee list with proper HTML layout */
 function showAttendeesModal(names) {
   const modal = document.getElementById('customModal');
   const titleEl = document.getElementById('modalTitle');
   const msgEl = document.getElementById('modalMessage');
   const btns = document.getElementById('modalButtons');
   if (!modal || !titleEl || !msgEl || !btns) return;
+
   titleEl.textContent = 'Alle aanwezigen';
   const listHtml = `
     <ul class="attendees-grid">
@@ -140,6 +170,7 @@ function showAttendeesModal(names) {
     </ul>
   `;
   msgEl.innerHTML = listHtml;
+
   btns.innerHTML = '';
   const okBtn = document.createElement('button');
   okBtn.type = 'button';
@@ -151,8 +182,10 @@ function showAttendeesModal(names) {
     modal.classList.add('hidden');
   });
   btns.appendChild(okBtn);
+
   modal.classList.remove('hidden');
 }
+
 
 function togglePasswordVisibility(passwordInput, toggleIcon) {
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -172,13 +205,16 @@ function togglePasswordVisibility(passwordInput, toggleIcon) {
     }
 }
 
+
 function login() {
     const usernameInput = document.getElementById('usernameInput').value.trim();
     const passwordInput = document.getElementById('passwordInput').value;
     if (!usernameInput) { showModal('Fout', 'Vul een gebruikersnaam in!'); return; }
     if (!passwordInput) { showModal('Fout', 'Vul een wachtwoord in!'); return; }
+
     const loader = document.getElementById('loginLoader');
     loader.classList.remove('hidden');
+
     fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -213,6 +249,9 @@ function login() {
     });
 }
 
+
+
+/** Register */
 function registerUser() {
     const username = document.getElementById("regUsername").value.trim();
     const email = document.getElementById("regEmail").value.trim();
@@ -236,6 +275,8 @@ function registerUser() {
     });
 }
 
+
+/** Logout */
 function logout() {
     localStorage.removeItem('gebruikersnaam');
     localStorage.removeItem('userRole');
@@ -245,13 +286,16 @@ function logout() {
     window.location.href = 'index.html';
 }
 
+/** App tonen */
 async function toonApp() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     const appMainTitle = document.getElementById('appMainTitle');
     if (appMainTitle) appMainTitle.textContent = gebruikersnaam;
+
     await toonDagen();
     setupUserMenu();
+
     const pendingUnsubscribe = localStorage.getItem('pendingGuestUnsubscribe');
     const actionDate = localStorage.getItem('actionDate');
     if (pendingUnsubscribe === 'true' && actionDate) {
@@ -263,6 +307,7 @@ async function toonApp() {
     }
 }
 
+/** Donderdagen 2025 */
 function alleDonderdagen() {
     const data = [];
     let datum = new Date(Date.UTC(2025, 0, 2));
@@ -274,6 +319,7 @@ function alleDonderdagen() {
     return data;
 }
 
+/** API helpers */
 async function fetchHost(datum) {
     try {
         const res = await fetch(`${API_URL}/host/${datum}`, { credentials: 'include' });
@@ -359,29 +405,37 @@ async function removeHost(datum) {
     } catch { showModal('Fout','Algemene fout bij host verwijderen.'); return false; }
 }
 
+/** Accordeon-item */
 async function createAccordionItem(datum, isVerleden) {
     const acc = document.createElement('div');
     acc.dataset.datum = datum;
-    const aanwezigen = await fetchAanwezigheid(datum);
+const aanwezigen = await fetchAanwezigheid(datum);
     const isGebruikerAanwezig = aanwezigen.includes(gebruikersnaam);
     const currentHost = await fetchHost(datum);
+
     const borderClass = isGebruikerAanwezig ? 'border-green-500 border-2' : 'border-gray-200';
     const cursorClass = !isVerleden ? 'cursor-pointer' : 'cursor-not-allowed';
+
     acc.className = `bg-white py-2 px-4 rounded-lg shadow-md flex flex-col gap-4 ${borderClass} ${isVerleden ? 'opacity-75' : ''} ${cursorClass} relative overflow-hidden transition-colors duration-300 ease-in-out`;
-    if (isVerleden) acc.classList.add('panel-verleden');
+if (isVerleden) acc.classList.add('panel-verleden');
+
     const greenStrip = document.createElement('div');
     greenStrip.className = 'green-strip';
     if (isGebruikerAanwezig) greenStrip.classList.add('active');
     acc.appendChild(greenStrip);
+
     if (!isVerleden) {
+        // ===== TOEKOMST: 3 panelen =====
         const swipeContainer = document.createElement('div');
         swipeContainer.className = 'swipe-container relative w-full';
         swipeContainer.innerHTML = `
             <div class="flex" data-panel-container>
+                <!-- Attendees (0) -->
                 <div class="w-full flex-shrink-0 bg-transparent p-2 rounded-lg flex flex-col" data-attendee-panel>
                     <p class="text-base font-semibold text-gray-800 mb-1">Aanwezigen:</p>
                     <p class="text-sm text-gray-700 flex-grow overflow-y-auto" data-attendee-names-display></p>
                 </div>
+                <!-- Main (1) -->
                 <div class="w-full flex-shrink-0 bg-transparent" data-main-panel>
                     <div class="flex items-center w-full py-2">
                         <div class="w-16 text-center flex-shrink-0 transition-all duration-300 transform" data-cal-icon>
@@ -406,77 +460,103 @@ async function createAccordionItem(datum, isVerleden) {
                 </div>
             </div>`;
         acc.appendChild(swipeContainer);
+
         const panelContainer = swipeContainer.querySelector('[data-panel-container]');
         const mainPanel = swipeContainer.querySelector('[data-main-panel]');
         const attendeePanel = swipeContainer.querySelector('[data-attendee-panel]');
+        const hostPanel = swipeContainer.querySelector('[data-host-panel]');
         const hostNameDisplay = mainPanel.querySelector('.host-name-display');
         const hostCrownWrapper = mainPanel.querySelector('#hostCrownWrapper');
         const hostCrownIcon = mainPanel.querySelector('#hostCrownIcon');
-        if (hostCrownIcon) {
-            hostCrownIcon.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (!gebruikersnaam) {
-                    showModal('Inloggen vereist', 'Log in om jezelf als host aan te melden.');
-                    return;
-                }
-                let updatedHostNow = currentHostCached;
-                try { updatedHostNow = await fetchHost(datum); } catch (e) {}
-                if (updatedHostNow === gebruikersnaam) {
-                    const confirmUnHost = await showConfirm('Afmelden als Host', 'Weet je zeker dat je je wilt afmelden als host?');
-                    if (confirmUnHost) {
-                        const ok = await removeHost(datum);
-                        if (ok) {
-                            localStorage.setItem('pendingGuestUnsubscribe', 'true');
-                            localStorage.setItem('actionDate', datum);
-                            await toonDagen();
-                        }
+        
+        // --- [PATCH] Klik op kroon om host te worden (of jezelf afmelden) ---
+        try {
+            if (hostCrownIcon) {
+                hostCrownIcon.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!gebruikersnaam) {
+                        showModal('Inloggen vereist', 'Log in om jezelf als host aan te melden.');
+                        return;
                     }
-                    return;
-                }
-                if (!updatedHostNow || updatedHostNow === 'Niet bekend') {
-                    const dateObj = new Date(datum + 'T00:00:00Z');
-                    const day = dateObj.getUTCDate();
-                    const monthName = dateObj.toLocaleDateString('nl-NL', { month: 'long' });
-                    const confirmHost = await showConfirm(
-                        'Host worden?',
-                        `Wil je jezelf aanmelden als host voor donderdag ${day} ${monthName}?`
-                    );
-                    if (confirmHost) {
-                        const ok = await setHost(datum);
-                        if (ok) {
-                            try {
-                                const aanwezigen = await fetchAanwezigheid(datum);
-                                if (!aanwezigen.includes(gebruikersnaam)) {
-                                    await voegAanwezigheidToe(datum);
-                                }
-                            } catch (e) { /* ignore */ }
-                            await toonDagen();
+
+                    // Altijd even de meest recente host ophalen
+                    let updatedHostNow = currentHostCached;
+                    try { updatedHostNow = await fetchHost(datum); } catch (e) {}
+
+                    // 1) Jij bent host -> afmelden
+                    if (updatedHostNow === gebruikersnaam) {
+                        const confirmUnHost = await showConfirm('Afmelden als Host', 'Weet je zeker dat je je wilt afmelden als host?');
+                        if (confirmUnHost) {
+                            const ok = await removeHost(datum);
+                            if (ok) {
+                                // zelfde flow als op de mainPanel klik
+                                localStorage.setItem('pendingGuestUnsubscribe', 'true');
+                                localStorage.setItem('actionDate', datum);
+                                await toonDagen();
+                            }
                         }
+                        return;
                     }
+
+                    // 2) Host onbekend -> jij host worden
+                    if (!updatedHostNow || updatedHostNow === 'Niet bekend') {
+                        const dateObj = new Date(datum + 'T00:00:00Z');
+const day = dateObj.getUTCDate();
+const monthName = dateObj.toLocaleDateString('nl-NL', { month: 'long' });
+
+const confirmHost = await showConfirm(
+    'Host worden?',
+    `Wil je jezelf aanmelden als host voor donderdag ${day} ${monthName}?`
+);
+                        if (confirmHost) {
+                            const ok = await setHost(datum);
+                            if (ok) {
+                                try {
+                                    const aanwezigen = await fetchAanwezigheid(datum);
+                                    if (!aanwezigen.includes(gebruikersnaam)) {
+                                        await voegAanwezigheidToe(datum);
+                                    }
+                                } catch (e) { /* ignore */ }
+                                await toonDagen();
+                            }
+                        }
+                        return;
+                    }
+
+                    // 3) Iemand anders is al host -> niets doen
                     return;
-                }
-                return;
-            }, { passive: true });
-        }
-        const mobileAttendeeCountDisplay = mainPanel.querySelector('[data-mobile-attendee-count]');
+                }, { passive: true });
+            }
+        } catch (e) { /* noop */ }
+        // --- [/PATCH] ---
+    const mobileAttendeeCountDisplay = mainPanel.querySelector('[data-mobile-attendee-count]');
         const desktopAttendeeListDisplay = mainPanel.querySelector('[data-desktop-attendee-list]');
         const dateDisplay = mainPanel.querySelector('[data-date-display]');
         const dayNameDisplay = mainPanel.querySelector('[data-day-name]');
         const attendeeNamesDisplay = attendeePanel.querySelector('[data-attendee-names-display]');
-        let currentHostCached = null;
-        let panelIndex = 1;
+        const setHostButton = hostPanel ? hostPanel.querySelector('#setHostButton') : null;
+
+        
+        let currentHostCached = null; // wordt gezet in _updateAccordionItemUI()
+// start op main (index 1)
+        let panelIndex = 1; // 0 attendees, 1 main, 2 host
         const hasHostPanel = false;
+
         function setTransformByIndex(i, withTransition = true) {
             if (withTransition) panelContainer.style.transition = 'transform 0.38s ease-out';
             else panelContainer.style.transition = 'none';
             panelContainer.style.transform = `translateX(${-100 * i}%)`;
         }
+
         function thresholdPx() { return 50; }
+        
         function applySwipeLeftEnterEffects(acc) {
             const cal = acc.querySelector('[data-cal-icon]');
             const mainText = acc.querySelector('[data-main-text]');
             const crownWrapper = acc.querySelector('#hostCrownWrapper');
             const calDay = acc.querySelector('[data-cal-day]');
+
+            // Kalender verdwijnt + breedte vrijgeven
             if (cal) {
                 cal.classList.add('-translate-x-full', 'opacity-0', 'w-0');
                 cal.classList.remove('w-16');
@@ -484,24 +564,33 @@ async function createAccordionItem(datum, isVerleden) {
             if (calDay) {
                 calDay.style.opacity = '0';
             }
+
+            // Tekst schuift mee
             if (mainText) {
                 mainText.classList.remove('ml-7');
                 mainText.classList.add('ml-3');
             }
+
+            // Crown: van rechts inschuiven met fade-in + pulserende ring
             if (typeof currentHostCached !== 'undefined' && (!currentHostCached || currentHostCached === 'Niet bekend') && crownWrapper) {
                 crownWrapper.classList.remove('hidden');
+                // Startpositie buiten beeld rechts
                 crownWrapper.classList.add('translate-x-12', 'opacity-0');
                 crownWrapper.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+                // Reflow forceren zodat transition pakt
                 void crownWrapper.offsetWidth;
+                // Eindpositie: in beeld
                 crownWrapper.classList.remove('translate-x-12', 'opacity-0');
                 crownWrapper.classList.add('translate-x-0', 'opacity-100', 'ring-animated');
             }
         }
+
         function resetSwipeLeftEffects(acc) {
             const cal = acc.querySelector('[data-cal-icon]');
             const mainText = acc.querySelector('[data-main-text]');
             const crownWrapper = acc.querySelector('#hostCrownWrapper');
             const calDay = acc.querySelector('[data-cal-day]');
+
             if (cal) {
                 cal.classList.remove('-translate-x-full', 'opacity-0', 'w-0');
                 cal.classList.add('w-16');
@@ -511,21 +600,26 @@ async function createAccordionItem(datum, isVerleden) {
             if(calDay) {
                 calDay.style.opacity = '';
             }
+
             if (mainText) {
                 mainText.classList.remove('ml-3');
                 mainText.classList.add('ml-7');
                 mainText.style.transform = '';
                 mainText.style.opacity = '';
             }
+
             if (crownWrapper) {
+                // Als gebruiker host is: kroon altijd zichtbaar
                 if (typeof currentHostCached !== 'undefined' && currentHostCached === gebruikersnaam) {
                     crownWrapper.classList.remove('hidden', 'translate-x-12', 'opacity-0', 'ring-animated');
                     crownWrapper.classList.add('translate-x-0', 'opacity-100');
                 } else if (typeof currentHostCached !== 'undefined' && (!currentHostCached || currentHostCached === 'Niet bekend')) {
+                    // Host onbekend: kroon klaarzetten buiten beeld rechts
                     crownWrapper.classList.remove('hidden');
                     crownWrapper.classList.remove('translate-x-0', 'opacity-100');
                     crownWrapper.classList.add('translate-x-12', 'opacity-0', 'ring-animated');
                 } else {
+                    // Andere host bekend: verbergen
                     crownWrapper.classList.add('hidden');
                     crownWrapper.classList.remove('translate-x-0', 'opacity-100', 'ring-animated');
                     crownWrapper.classList.add('translate-x-12', 'opacity-0');
@@ -534,7 +628,9 @@ async function createAccordionItem(datum, isVerleden) {
                 crownWrapper.style.opacity = '';
             }
         }
+
         setTransformByIndex(panelIndex, false);
+
         async function _updateAccordionItemUI() {
             const aanwezigen = await fetchAanwezigheid(datum);
             const aanwezig = aanwezigen.includes(gebruikersnaam);
@@ -544,35 +640,46 @@ async function createAccordionItem(datum, isVerleden) {
                 const crownWrapper = acc.querySelector('#hostCrownWrapper');
                 if (crownWrapper) {
                     if (currentHostCached === gebruikersnaam) {
+                        // Gebruiker is host: kroon altijd zichtbaar op main
                         crownWrapper.classList.remove('hidden', 'translate-x-12', 'opacity-0', 'ring-animated');
                         crownWrapper.classList.add('translate-x-0', 'opacity-100');
                     } else if (!currentHostCached || currentHostCached === 'Niet bekend') {
+                        // Host onbekend
                         crownWrapper.classList.remove('hidden');
                         if (window.innerWidth >= 640) {
+                            // Desktop: toon direct met puls om aan te melden
                             crownWrapper.classList.remove('translate-x-12', 'opacity-0');
                             crownWrapper.classList.add('translate-x-0', 'opacity-100', 'ring-animated');
                         } else {
+                            // Mobile: buiten beeld houden tot swipe-animatie
                             crownWrapper.classList.remove('translate-x-0', 'opacity-100');
                             crownWrapper.classList.add('translate-x-12', 'opacity-0', 'ring-animated');
                         }
+    
                     } else {
+                        // Andere host: verbergen
                         crownWrapper.classList.add('hidden');
                         crownWrapper.classList.remove('translate-x-0', 'opacity-100', 'ring-animated');
                         crownWrapper.classList.add('translate-x-12', 'opacity-0');
                     }
                 }
-            } catch(e) {}
+            } catch(e) { /* noop */ }
+            
+            
+            // Als host bekend wordt, herstel UI-effecten
             try {
                 if (currentHostCached && currentHostCached !== 'Niet bekend') {
                     resetSwipeLeftEffects(acc);
                 }
             } catch(e) {}
+            // Als host nu bekend is en we staan op host-paneel, ga terug naar main
             try {
                 if (currentHostCached && currentHostCached !== 'Niet bekend' && typeof panelIndex !== 'undefined' && panelIndex === 2) {
                     panelIndex = 1;
                     setTransformByIndex(panelIndex, true);
                 }
-            } catch (e) {}
+            } catch (e) { /* ignore */ }
+
             const dateObj = new Date(datum + 'T00:00:00Z');
             const formattedWeekday = dateObj.toLocaleDateString('nl-NL', { weekday: 'long' });
             const capitalizedWeekday = formattedWeekday.charAt(0).toUpperCase() + formattedWeekday.slice(1);
@@ -586,8 +693,10 @@ async function createAccordionItem(datum, isVerleden) {
                 dateDisplay.classList.remove('hidden');
                 dayNameDisplay.classList.add('hidden');
             }
+
             hostNameDisplay.textContent = currentHostNow;
             if (hostCrownIcon) {
+                // Cursor pointer bij eigen host óf wanneer nog geen host bekend is
                 if (currentHostNow === gebruikersnaam || !currentHostNow || currentHostNow === 'Niet bekend') {
                     hostCrownIcon.classList.add('cursor-pointer');
                 } else {
@@ -606,9 +715,13 @@ async function createAccordionItem(datum, isVerleden) {
                      hostCrownWrapper.classList.remove('cursor-pointer');
                  }
             }
+
             mobileAttendeeCountDisplay.textContent = `Aanwezigen: ${aanwezigen.length === 0 ? 'Geen' : aanwezigen.length}`;
-            renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
-            renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
+            // Desktop: inline + “+X meer”
+renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
+            // Aanwezigen-paneel (zonder dubbel label)
+renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
+
             const newBorderClass = aanwezig ? 'border-green-500 border-2' : 'border-gray-200';
             acc.classList.remove('border-green-500', 'border-gray-200', 'border-2');
             acc.classList.add(...newBorderClass.split(' '));
@@ -617,6 +730,8 @@ async function createAccordionItem(datum, isVerleden) {
         }
         window.addEventListener('resize', _updateAccordionItemUI);
         _updateAccordionItemUI();
+
+        // klik: aanwezig toggle of unhost
         mainPanel.addEventListener('click', async () => {
             if (!gebruikersnaam) return showModal('Inloggen vereist', 'Log in om je aanwezigheid te wijzigen.');
             const updatedHost = await fetchHost(datum);
@@ -637,7 +752,8 @@ async function createAccordionItem(datum, isVerleden) {
                 if (ok) _updateAccordionItemUI();
             }
         });
-        const setHostButton = hasHostPanel ? hostPanel.querySelector('#setHostButton') : null;
+
+        // Host worden
         if (setHostButton) {
             setHostButton.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -652,10 +768,15 @@ async function createAccordionItem(datum, isVerleden) {
                 }
             });
         }
+
+        // ===== SWIPE: live drag symmetrisch =====
         if (window.innerWidth < 640) {
             let startX = 0, startY = 0, currentX = 0, isSwiping = false, startOffset = -100 * panelIndex;
+
+            // Als host bekend is, blokkeren we schuiven naar het host-paneel (rechts van main)
             const minOffset = (hasHostPanel && (currentHostCached === null || currentHostCached === 'Niet bekend')) ? -200 : -100;
             const maxOffset = 0;
+            
             acc.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -664,16 +785,21 @@ async function createAccordionItem(datum, isVerleden) {
                 startOffset = -100 * panelIndex;
                 panelContainer.style.transition = 'none';
             }, { passive: true });
+
             acc.addEventListener('touchmove', (e) => {
                 if (!isSwiping) return;
                 currentX = e.touches[0].clientX;
                 const diffX = currentX - startX;
                 const diffY = e.touches[0].clientY - startY;
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
+
+                // Live drag: offset = startOffset + delta
                 let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
+                
+                // --- Live preview fix ---
                 try {
                     const crownWrapper = acc.querySelector('#hostCrownWrapper');
                     const cal = acc.querySelector('[data-cal-icon]');
@@ -698,44 +824,56 @@ async function createAccordionItem(datum, isVerleden) {
                             crownWrapper.style.opacity = String(progress);
                         }
                     }
-                } catch (e) {}
+                } catch (e) { /* noop */ }
+    
             }, { passive: false });
+
             acc.addEventListener('touchend', async () => {
                 if (!isSwiping) return;
                 isSwiping = false;
                 const deltaX = currentX - startX;
-                const goLeft = deltaX > thresholdPx();
-                const goRight = deltaX < -thresholdPx();
+                const goLeft  = deltaX > thresholdPx();   // vinger naar rechts -> naar attendees
+                const goRight = deltaX < -thresholdPx();  // vinger naar links  -> terug naar main of host-animatie
+
                 if (panelIndex === 1 && goLeft) {
+                    // Main -> Attendees
                     resetSwipeLeftEffects(acc);
                     panelIndex = 0;
                 } else if (panelIndex === 0 && goRight) {
+                    // Attendees -> Main
                     resetSwipeLeftEffects(acc);
                     panelIndex = 1;
                 } else if (panelIndex === 1 && goRight) {
+                    // Binnen main: alleen host-animatie als host onbekend
                     if (currentHostCached === null || currentHostCached === 'Niet bekend') {
                         applySwipeLeftEnterEffects(acc);
-                        panelIndex = 1;
+                        panelIndex = 1; // blijf op main
                     } else {
                         resetSwipeLeftEffects(acc);
                         panelIndex = 1;
                     }
                 }
                 setTransformByIndex(panelIndex, true);
+                
+                // Deze regel is verwijderd omdat hij de kroon onmiddellijk weer verbergt
+                // _updateAccordionItemUI();
             });
         } else {
             setTransformByIndex(panelIndex, false);
         }
     } else {
+        // ===== GESCHIEDENIS: 2 panelen =====
         const swipeContainer = document.createElement('div');
         acc.className = 'bg-white py-2 px-4 rounded-lg shadow-md flex flex-col gap-4 border-gray-200 panel-verleden cursor-not-allowed relative overflow-hidden';
         swipeContainer.className = 'swipe-container relative w-full';
         swipeContainer.innerHTML = `
             <div class="flex" data-panel-container>
+                <!-- Attendees (0) -->
                 <div class="w-full flex-shrink-0 bg-transparent p-2 rounded-lg flex flex-col" data-attendee-panel>
                     <p class="text-base font-semibold text-gray-800 mb-1">Aanwezigen:</p>
                     <p class="text-sm text-gray-700 flex-grow overflow-y-auto" data-attendee-names-display></p>
                 </div>
+                <!-- Main (1) -->
                 <div class="w-full flex-shrink-0 bg-transparent" data-main-panel>
                     <div class="flex items-center w-full py-2">
                         <div class="w-16 text-center flex-shrink-0">
@@ -758,6 +896,7 @@ async function createAccordionItem(datum, isVerleden) {
                 </div>
             </div>`;
         acc.appendChild(swipeContainer);
+
         const panelContainer = swipeContainer.querySelector('[data-panel-container]');
         const mainPanel = swipeContainer.querySelector('[data-main-panel]');
         const attendeePanel = swipeContainer.querySelector('[data-attendee-panel]');
@@ -767,20 +906,24 @@ async function createAccordionItem(datum, isVerleden) {
         const dateDisplay = mainPanel.querySelector('[data-date-display]');
         const dayNameDisplay = mainPanel.querySelector('[data-day-name]');
         const attendeeNamesDisplay = attendeePanel.querySelector('[data-attendee-names-display]');
-        let panelIndex = 1;
+
+        let panelIndex = 1; // 0 attendees, 1 main
         function setTransformByIndex(i, withTransition = true) {
             if (withTransition) panelContainer.style.transition = 'transform 0.38s ease-out';
             else panelContainer.style.transition = 'none';
             panelContainer.style.transform = `translateX(${-100 * i}%)`;
         }
         setTransformByIndex(panelIndex, false);
+
         async function _updateHistoryItemUI() {
             const aanwezigen = await fetchAanwezigheid(datum);
             const currentHostNow = await fetchHost(datum);
+
             const dateObj = new Date(datum + 'T00:00:00Z');
             const formattedWeekday = dateObj.toLocaleDateString('nl-NL', { weekday: 'long' });
             const capitalizedWeekday = formattedWeekday.charAt(0).toUpperCase() + formattedWeekday.slice(1);
             const formattedDateText = `${capitalizedWeekday} ${dateObj.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}`;
+
             if (window.innerWidth < 640) {
                 dateDisplay.classList.add('hidden');
                 dayNameDisplay.textContent = capitalizedWeekday;
@@ -790,10 +933,15 @@ async function createAccordionItem(datum, isVerleden) {
                 dateDisplay.classList.remove('hidden');
                 dayNameDisplay.classList.add('hidden');
             }
+
             if (hostNameDisplay) hostNameDisplay.textContent = currentHostNow || 'Niet bekend';
             if (mobileAttendeeCountDisplay) mobileAttendeeCountDisplay.textContent = `Aanwezigen: ${aanwezigen.length === 0 ? 'Geen' : aanwezigen.length}`;
-            if (desktopAttendeeListDisplay) renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
-            if (attendeeNamesDisplay) renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
+            if (desktopAttendeeListDisplay) // Desktop: inline + “+X meer”
+renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
+            if (attendeeNamesDisplay) // Aanwezigen-paneel (zonder dubbel label)
+renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
+        
+            // Toon gedempte kroon in geschiedenis wanneer de ingelogde gebruiker host was
             try {
                 const crownWrap = mainPanel.querySelector('[data-history-crown-wrap]');
                 if (crownWrap) {
@@ -803,14 +951,16 @@ async function createAccordionItem(datum, isVerleden) {
                         crownWrap.classList.add('hidden');
                     }
                 }
-            } catch (e) {}
-        }
+            } catch (e) { /* noop */ }
+}
         _updateHistoryItemUI();
         window.addEventListener('resize', _updateHistoryItemUI);
+
         if (window.innerWidth < 640) {
             let startX = 0, startY = 0, currentX = 0, isSwiping = false, startOffset = -100 * panelIndex;
             const minOffset = -100, maxOffset = 0;
             const thresholdPx = () => acc.offsetWidth * 0.20;
+
             acc.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
@@ -819,20 +969,25 @@ async function createAccordionItem(datum, isVerleden) {
                 startOffset = -100 * panelIndex;
                 panelContainer.style.transition = 'none';
             }, { passive: true });
+
             acc.addEventListener('touchmove', (e) => {
                 if (!isSwiping) return;
                 currentX = e.touches[0].clientX;
                 const diffX = currentX - startX;
                 const diffY = e.touches[0].clientY - startY;
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
+
                 let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
+                
+                // --- Live preview fix ---
                 try {
                     const crownWrapper = acc.querySelector('#hostCrownWrapper');
                     const cal = acc.querySelector('[data-cal-icon]');
                     const mainText = acc.querySelector('[data-main-text]');
+                    // progressLeft: only when dragging left (diffX < 0) from main panel
                     let progressLeft = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
@@ -849,16 +1004,20 @@ async function createAccordionItem(datum, isVerleden) {
                             crownWrapper.style.opacity = String(progressLeft);
                         }
                     }
-                } catch (e) {}
+                } catch (e) { /* noop */ }
+    
             }, { passive: false });
+
             acc.addEventListener('touchend', () => {
                 if (!isSwiping) return;
                 isSwiping = false;
                 const deltaX = currentX - startX;
                 const goLeft = deltaX > thresholdPx();
                 const goRight = deltaX < -thresholdPx();
+
                 if (goLeft && panelIndex > 0) panelIndex -= 1;
                 else if (goRight && panelIndex < 1) panelIndex += 1;
+
                 setTransformByIndex(panelIndex, true);
             });
         } else {
@@ -868,108 +1027,139 @@ async function createAccordionItem(datum, isVerleden) {
     return acc;
 }
 
+/** Dagen laden */
 async function toonDagen() {
     const lijst = document.getElementById('dagenLijst');
     lijst.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden donderdagen...</div>';
+
     const allThursdays = alleDonderdagen();
     const vandaag = new Date(); vandaag.setHours(0,0,0,0);
     const vandaagStr = vandaag.toISOString().split('T')[0];
+
     const geschiedenis = allThursdays.filter(d => d < vandaagStr);
     const toekomst = allThursdays.filter(d => d >= vandaagStr);
+
     const tempDiv = document.createElement('div');
     tempDiv.className = 'space-y-4';
-    if (geschiedenis.length) {
-        const historyButton = document.createElement('div');
-        historyButton.className = `bg-white p-4 rounded-lg shadow-md flex items-center justify-between cursor-pointer mb-4`;
-        historyButton.innerHTML = `
-            <div class="flex items-center gap-4 w-full justify-between">
-                <span id="historyChevronLeading" class="text-gray-500 text-2xl">▼</span>
-                <span class="text-lg font-semibold text-gray-800">Geschiedenis</span>
-                <span id="historyChevronTrailing" class="text-gray-500 text-2xl">▼</span>
-            </div>`;
-        tempDiv.appendChild(historyButton);
-        const historyContentContainer = document.createElement('div');
-        historyContentContainer.id = 'historyContent';
-        historyContentContainer.className = 'hidden space-y-4';
-        tempDiv.appendChild(historyContentContainer);
-        let _histActief = false;
-        let _histReachedStart = false;
-        let _histIndex = 0;
-        const _histBatch = 4;
-        const _histChrono = [...geschiedenis].sort((a, b) => new Date(a) - new Date(b)); let _histNextEnd = _histChrono.length;
-        historyButton.addEventListener('click', async () => {
-            const historyContent = document.getElementById('historyContent');
-            const chevronL = document.getElementById('historyChevronLeading');
-            const chevronR = document.getElementById('historyChevronTrailing');
-            const titleSpan = historyButton.querySelector('.text-lg');
-            if (_histActief && _histReachedStart) {
-                historyContent.innerHTML = '';
-                historyContent.classList.add('hidden');
-                chevronL.textContent = '▼'; chevronR.textContent = '▼';
-                if (titleSpan) titleSpan.textContent = 'Geschiedenis';
-                _histActief = false;
-                _histReachedStart = false;
-                _histIndex = 0;
-                return;
-            }
-            if (historyContent.classList.contains('hidden')) {
-                historyContent.classList.remove('hidden');
-                chevronL.textContent = '▲'; chevronR.textContent = '▲';
-                if (titleSpan) titleSpan.textContent = 'Meer';
-                _histActief = true;
-            }
-            const end = _histNextEnd;
-            const start = Math.max(0, end - _histBatch);
-            if (_histIndex === 0 && !historyContent.children.length) {
-                historyContent.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden geschiedenis...</div>';
-            }
-            const frag = document.createDocumentFragment();
-            for (let i = start; i < end; i++) {
-                const d = _histChrono[i];
-                const accItem = await createAccordionItem(d, true);
-                frag.appendChild(accItem);
-            }
-            const maybeLoader = historyContent.querySelector('.loader');
-            if (maybeLoader && historyContent.children.length === 1) {
-              historyContent.innerHTML = '';
-            }
-            if (historyContent.firstChild) {
-              historyContent.insertBefore(frag, historyContent.firstChild);
-            } else {
-              historyContent.appendChild(frag);
-            }
-            _histNextEnd = start;
-            _histReachedStart = _histNextEnd <= 0;
-            if (_histReachedStart && titleSpan) {
-                titleSpan.textContent = 'Inklappen';
-            }
-        });
-    } else {
-        const historyContent = document.getElementById('historyContent');
-        if (historyContent) {
-          historyContent.classList.add('hidden');
-          const chevronL = document.getElementById('historyChevronLeading');
-          const chevronR = document.getElementById('historyChevronTrailing');
-          if (chevronL) chevronL.textContent = '▼';
-          if (chevronR) chevronR.textContent = '▼';
-          historyContent.innerHTML = '';
-        }
+
+
+        if (geschiedenis.length) {
+            const historyButton = document.createElement('div');
+            historyButton.className = `bg-white p-4 rounded-lg shadow-md flex items-center justify-between cursor-pointer mb-4`;
+            historyButton.innerHTML = `
+                <div class="flex items-center gap-4 w-full justify-between">
+                    <span id="historyChevronLeading" class="text-gray-500 text-2xl">▼</span>
+                    <span class="text-lg font-semibold text-gray-800">Geschiedenis</span>
+                    <span id="historyChevronTrailing" class="text-gray-500 text-2xl">▼</span>
+                </div>`;
+            tempDiv.appendChild(historyButton);
+
+            const historyContentContainer = document.createElement('div');
+            historyContentContainer.id = 'historyContent';
+            historyContentContainer.className = 'hidden space-y-4';
+            tempDiv.appendChild(historyContentContainer);
+
+            
+let _histActief = false;
+let _histReachedStart = false;
+let _histIndex = 0; // (legacy; unused for history batches) // next index into reversed history
+const _histBatch = 4;
+const _histChrono = [...geschiedenis].sort((a, b) => new Date(a) - new Date(b)); let _histNextEnd = _histChrono.length; // exclusive end index for next batch (start with latest)
+// recent -> oud
+
+historyButton.addEventListener('click', async () => {
+    const historyContent = document.getElementById('historyContent');
+    const chevronL = document.getElementById('historyChevronLeading');
+    const chevronR = document.getElementById('historyChevronTrailing');
+    const titleSpan = historyButton.querySelector('.text-lg');
+
+    // Als we volledig geladen hebben en gebruiker klikt: inklappen & reset
+    if (_histActief && _histReachedStart) {
+        // Inklappen/reset
+        historyContent.innerHTML = '';
+        historyContent.classList.add('hidden');
+        chevronL.textContent = '▼'; chevronR.textContent = '▼';
+        if (titleSpan) titleSpan.textContent = 'Geschiedenis';
+        _histActief = false;
+        _histReachedStart = false;
+        _histIndex = 0;
+        return;
     }
-    for (const d of toekomst) {
-        const acc = await createAccordionItem(d, false);
-        tempDiv.appendChild(acc);
+
+    // Eerste klik of vervolgklikken tijdens laden
+    if (historyContent.classList.contains('hidden')) {
+        historyContent.classList.remove('hidden');
+        chevronL.textContent = '▲'; chevronR.textContent = '▲';
+        if (titleSpan) titleSpan.textContent = 'Meer';
+        _histActief = true;
     }
-    lijst.innerHTML = '';
-    lijst.appendChild(tempDiv);
-    if (allThursdays.length === 0) {
-        lijst.innerHTML = '<div class="text-center text-gray-500 py-4">Geen donderdagen gevonden voor 2025.</div>';
+
+    // Batch laden
+    const end = _histNextEnd;
+const start = Math.max(0, end - _histBatch);
+    // Toon loader als er nog niets staat
+    if (_histIndex === 0 && !historyContent.children.length) {
+        historyContent.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden geschiedenis...</div>';
     }
+    const frag = document.createDocumentFragment();
+
+    for (let i = start; i < end; i++) {
+        const d = _histChrono[i];
+        const accItem = await createAccordionItem(d, true);
+        frag.appendChild(accItem);
+    }
+
+    // Verwijder loader en append
+    const maybeLoader = historyContent.querySelector('.loader');
+if (maybeLoader && historyContent.children.length === 1) {
+  historyContent.innerHTML = '';
+}
+// Voeg batches steeds vóór bestaande inhoud toe, zodat de volgorde chronologisch blijft
+if (historyContent.firstChild) {
+  historyContent.insertBefore(frag, historyContent.firstChild);
+} else {
+  historyContent.appendChild(frag);
 }
 
+    _histNextEnd = start;
+_histReachedStart = _histNextEnd <= 0;
+
+    // Als we klaar zijn, zet titel op Inklappen
+    if (_histReachedStart && titleSpan) {
+        titleSpan.textContent = 'Inklappen';
+    }
+});
+} else {
+                    historyContent.classList.add('hidden');
+                    chevronL.textContent = '▼'; chevronR.textContent = '▼';
+                    historyContent.innerHTML = '';
+                }
+
+
+
+        for (const d of toekomst) {
+            const acc = await createAccordionItem(d, false);
+            tempDiv.appendChild(acc);
+        }
+
+        lijst.innerHTML = '';
+        lijst.appendChild(tempDiv);
+
+        if (allThursdays.length === 0) {
+            lijst.innerHTML = '<div class="text-center text-gray-500 py-4">Geen donderdagen gevonden voor 2025.</div>';
+        }
+
+
+
+
+}
+
+/** User menu */
 function setupUserMenu() {
     const userIcon = document.getElementById('userIcon');
     const dropdown = document.getElementById('dropdownMenu');
     const menuGebruikersnaam = document.getElementById('menuGebruikersnaam');
+
     if (menuGebruikersnaam) {
         menuGebruikersnaam.textContent = gebruikersnaam;
         menuGebruikersnaam.style.cursor = 'pointer';
@@ -978,12 +1168,14 @@ function setupUserMenu() {
             window.location.href = 'settings.html';
         });
     }
+
     if (userIcon && dropdown) {
         userIcon.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.classList.toggle('hidden');
         });
     }
+
     document.addEventListener('click', (e) => {
         if (dropdown && userIcon && !dropdown.contains(e.target) && !userIcon.contains(e.target)) {
             dropdown.classList.add('hidden');
@@ -991,6 +1183,7 @@ function setupUserMenu() {
     });
 }
 
+/** Modals */
 const registrationModal = document.getElementById("registrationModal");
 const forgotPasswordModal = document.getElementById("forgotPasswordModal");
 
@@ -1009,10 +1202,13 @@ function showModal(title, messageContent, buttons = []) {
     document.getElementById('modalTitle').textContent = title;
     const modalMessageDiv = document.getElementById('modalMessage');
     modalMessageDiv.innerHTML = '';
+
     if (typeof messageContent === 'string') modalMessageDiv.textContent = messageContent;
     else if (messageContent instanceof HTMLElement) modalMessageDiv.appendChild(messageContent);
+
     const modalButtons = document.getElementById('modalButtons');
     modalButtons.innerHTML = '';
+
     if (buttons.length > 0) {
         buttons.forEach(btn => {
             const buttonElement = document.createElement('button');
@@ -1039,16 +1235,20 @@ function showConfirm(title, message, confirmText = 'Ja', cancelText = 'Nee') {
         const modalMessageDiv = document.getElementById('modalMessage');
         modalMessageDiv.innerHTML = '';
         modalMessageDiv.textContent = message;
+
         const modalButtons = document.getElementById('modalButtons');
         modalButtons.innerHTML = '';
+
         const confirmButton = document.createElement('button');
         confirmButton.textContent = confirmText;
         confirmButton.className = 'bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out';
         confirmButton.onclick = () => { modalOverlay.classList.add('hidden'); resolveModalPromise(true); };
+
         const cancelButton = document.createElement('button');
         cancelButton.textContent = cancelText;
         cancelButton.className = 'bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-md hover:bg-gray-500 transition duration-300 ease-in-out';
         cancelButton.onclick = () => { modalOverlay.classList.add('hidden'); resolveModalPromise(false); };
+
         modalButtons.appendChild(confirmButton);
         modalButtons.appendChild(cancelButton);
         modalOverlay.classList.remove('hidden');
@@ -1058,18 +1258,25 @@ function showConfirm(title, message, confirmText = 'Ja', cancelText = 'Nee') {
 async function requestPasswordReset() {
     const email = document.getElementById('forgotEmail').value.trim();
     const loader = document.getElementById('forgotPasswordLoader');
+    
     if (!email) {
         showModal('Fout', 'Vul uw e-mailadres in.');
         return;
     }
+    
     loader.classList.remove('hidden');
+
     try {
         const response = await fetch(`${API_URL}/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
         });
+        
         const data = await response.json();
+
+        // De API geeft altijd een succesvol bericht terug, ongeacht of het e-mailadres bestaat,
+        // om gebruikersnamen niet te lekken. We tonen altijd hetzelfde succesbericht.
         showModal('Succes', data.message || 'Als het e-mailadres bekend is, is er een link voor het opnieuw instellen van het wachtwoord verzonden.');
         forgotPasswordModal.classList.add('hidden');
         document.getElementById('forgotPasswordForm').reset();
@@ -1081,10 +1288,14 @@ async function requestPasswordReset() {
     }
 }
 
+
+/** Initial load */
 window.onload = () => {
     gebruikersnaam = localStorage.getItem('gebruikersnaam');
     userRole = localStorage.getItem('userRole');
+
     document.getElementById('appContainer').classList.add('hidden');
+
     if (gebruikersnaam && userRole) {
         if (userRole === 'admin') {
             window.location.href = 'admin.html';
@@ -1098,6 +1309,7 @@ window.onload = () => {
     } else {
         document.getElementById('loginContainer').classList.remove('hidden');
     }
+
     const passwordInput = document.getElementById('passwordInput');
     const togglePassword = document.getElementById('togglePassword');
     if (passwordInput && togglePassword) {
@@ -1105,6 +1317,7 @@ window.onload = () => {
             togglePasswordVisibility(passwordInput, togglePassword);
         });
     }
+
     const regPasswordInput = document.getElementById('regPassword');
     const toggleRegPassword = document.getElementById('toggleRegPassword');
     if (regPasswordInput && toggleRegPassword) {
@@ -1112,55 +1325,168 @@ window.onload = () => {
             togglePasswordVisibility(regPasswordInput, toggleRegPassword);
         });
     }
+
+    // Nieuwe functionaliteit voor wachtwoord vergeten
     document.getElementById("wachtwoordVergetenLink").onclick = (e) => {
         e.preventDefault();
         forgotPasswordModal.classList.remove('hidden');
     };
+    
     document.getElementById("closeForgotPasswordModal").onclick = () => {
         forgotPasswordModal.classList.add('hidden');
     };
 };
 
+
+/* === Geschiedenis-accordeon v1.0 === */
 (() => {
+  const BTN_ID = 'geschiedenisKnop';
+  const BATCH = 4;
+
+  let actief = false;
+  let reachedStart = false;
+  let volgendeIndex = null;
+  const geladenSet = new Set();
+
+  function alleDonderdagenSafe() {
+    try { return alleDonderdagen(); } catch(e) { return []; }
+  }
+
+  const $btn = document.getElementById(BTN_ID);
+  if ($btn) {
+    $btn.addEventListener('click', async () => {
+      if (actief && reachedStart) {
+        inklapAlles();
+        return;
+      }
+      if (!actief) {
+        initStartIndex();
+        actief = true;
+      }
+      await laadVolgendeBatch();
+      if (reachedStart) $btn.textContent = 'Inklappen';
+      else $btn.textContent = 'Meer geschiedenis';
+    });
+  }
+
+  function initStartIndex() {
+    const alle = alleDonderdagenSafe(); // oud -> nieuw
+    const $dagenLijst = document.getElementById('dagenLijst');
+    const futureNodes = $dagenLijst ? [...$dagenLijst.children].filter(n => !n.classList.contains('panel-verleden')) : [];
+    let eersteFutureDatum = null;
+    for (const n of futureNodes) {
+      if (n.dataset && n.dataset.datum) { eersteFutureDatum = n.dataset.datum; break; }
+    }
+    if (!eersteFutureDatum) {
+      const alleIdx = alle.length; // alles verleden
+      volgendeIndex = alleIdx - 1;
+      reachedStart = volgendeIndex < 0;
+      return;
+    }
+    const alleIdx = alle.indexOf(eersteFutureDatum);
+    volgendeIndex = (alleIdx === -1) ? (alle.length - 1) : (alleIdx - 1);
+    reachedStart = volgendeIndex < 0;
+  }
+
+  async function laadVolgendeBatch() {
+    if (reachedStart) return;
+    const alle = alleDonderdagenSafe(); // oud -> nieuw
+    const $dagenLijst = document.getElementById('dagenLijst');
+    if (!$dagenLijst) return;
+    const endIndex = Math.max(-1, volgendeIndex - BATCH);
+    for (let i = volgendeIndex; i > endIndex; i--) {
+      if (i < 0) break;
+      const datum = alle[i];
+      if (geladenSet.has(datum)) continue;
+      try {
+        const acc = await createAccordionItem(datum, true);
+        if (acc) {
+          acc.classList.add('panel-verleden');
+          acc.dataset.datum = datum;
+          $dagenLijst.insertBefore(acc, $dagenLijst.firstChild);
+          geladenSet.add(datum);
+        }
+      } catch(e) {}
+    }
+    volgendeIndex = endIndex;
+    if (volgendeIndex < 0) reachedStart = true;
+  }
+
+  function inklapAlles() {
+    const $dagenLijst = document.getElementById('dagenLijst');
+    if ($dagenLijst) [...$dagenLijst.querySelectorAll('.panel-verleden')].forEach(n => n.remove());
+    actief = false;
+    reachedStart = false;
+    volgendeIndex = null;
+    geladenSet.clear();
+    const $btn = document.getElementById(BTN_ID);
+    if ($btn) $btn.textContent = 'Geschiedenis';
+  }
+
+  // Optioneel support voor her-render van de lijst
+  document.addEventListener('toonDagen:rendered', () => {
+    volgendeIndex = null;
+    geladenSet.clear();
+    if (actief && !reachedStart) initStartIndex();
+  });
+})();
+
+/* ===== Settings page helpers (accordions + suggestions) ===== */
+(() => {
+  // Avoid double-declare
   if (window.__settingsHelpersInit) return;
   window.__settingsHelpersInit = true;
+
   function ensureModal() {
+    // Use existing modal if present on the page
     let overlay = document.getElementById('customModal');
     if (overlay) return overlay;
+
+    // Otherwise, create a minimal modal (non-intrusive for pages without it)
     overlay = document.createElement('div');
     overlay.id = 'customModal';
     overlay.className = 'fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 hidden';
+
     const box = document.createElement('div');
     box.className = 'bg-white p-6 rounded-xl shadow-lg max-w-sm w-11/12 text-center';
+
     const title = document.createElement('h3');
     title.id = 'modalTitle';
     title.className = 'text-xl font-bold text-gray-800 mb-4';
     box.appendChild(title);
+
     const msg = document.createElement('div');
     msg.id = 'modalMessage';
     msg.className = 'mb-4 text-gray-700 leading-relaxed text-left';
     box.appendChild(msg);
+
     const btns = document.createElement('div');
     btns.id = 'modalButtons';
     btns.className = 'flex justify-center gap-3';
     box.appendChild(btns);
+
     overlay.appendChild(box);
     document.body.appendChild(overlay);
     return overlay;
   }
+
+  // Define showModal if not already available on page scripts
   if (typeof window.showModal !== 'function') {
     window.showModal = function(title, messageContent, buttons = []) {
       const modalOverlay = ensureModal();
       document.getElementById('modalTitle').textContent = title;
       const modalMessageDiv = document.getElementById('modalMessage');
       modalMessageDiv.innerHTML = '';
+
       if (typeof messageContent === 'string') {
         modalMessageDiv.textContent = messageContent;
       } else if (messageContent instanceof HTMLElement) {
         modalMessageDiv.appendChild(messageContent);
       }
+
       const modalButtons = document.getElementById('modalButtons');
       modalButtons.innerHTML = '';
+
       if (buttons.length > 0) {
         buttons.forEach(btn => {
           const buttonElement = document.createElement('button');
@@ -1179,27 +1505,36 @@ window.onload = () => {
       modalOverlay.classList.remove('hidden');
     };
   }
+
   function initAccordions() {
     document.querySelectorAll('[data-accordion-trigger]').forEach(btn => {
+      // Prevent double-binding
       if (btn.__accordionBound) return;
       btn.__accordionBound = true;
+
       btn.addEventListener('click', () => {
         const section = btn.closest('section');
         if (!section) return;
         const wasOpen = section.classList.contains('accordion-open');
         section.classList.toggle('accordion-open', !wasOpen);
+
+        // rotate chevron (expects wrapper with inline-flex)
         const iconWrap = btn.querySelector('span.inline-flex');
         if (iconWrap) iconWrap.classList.toggle('rotate-90', !wasOpen);
       });
     });
   }
+
   async function initSuggestionForm() {
     const form = document.getElementById('suggestionForm');
     if (!form || form.__bound) return;
     form.__bound = true;
+
     const textarea = form.querySelector('#suggestionText');
     const loader = document.getElementById('suggestionLoader') || document.createElement('div');
     const messageDiv = document.getElementById('suggestionMessage') || document.createElement('div');
+
+    // Provide defaults if not present on the page
     if (!loader.id) {
       loader.id = 'suggestionLoader';
       loader.className = 'hidden';
@@ -1210,6 +1545,7 @@ window.onload = () => {
       messageDiv.className = 'mt-3 text-center text-sm';
       loader.after(messageDiv);
     }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const suggestion = (textarea?.value || '').trim();
@@ -1217,10 +1553,13 @@ window.onload = () => {
         showModal('Waarschuwing', 'Vul een suggestie in voordat je verstuurt.');
         return;
       }
-      const API_URL = (window.API_URL || '/api').replace(/\/$/, '');
+
+      const API_URL = (window.API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
       const gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
+
       loader.classList.remove('hidden');
       messageDiv.textContent = '';
+
       try {
         const response = await fetch(`${API_URL}/suggestie`, {
           method: 'POST',
@@ -1243,10 +1582,12 @@ window.onload = () => {
       }
     });
   }
+
   function initWhenReady() {
     initAccordions();
     initSuggestionForm();
   }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initWhenReady);
   } else {
