@@ -1,4 +1,4 @@
-/ versie 1.1 - gefixt
+// versie 1.1 - gefixt
 require('dotenv').config(); / Load environment variables from .env file
 
 const express = require('express');
@@ -12,31 +12,31 @@ const nodemailer = require('nodemailer'); / Import nodemailer
 const app = express();
 const port = process.env.PORT || 3000;
 
-/ Middleware
+// Middleware
 app.use(cors({
-    origin: 'http://localhost:5500', / Allow requests from your frontend development server
+    origin: 'http://localhost:5500', // Allow requests from your frontend development server
     credentials: true / Crucial for sending cookies (sessions)
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-/ Serve statische bestanden uit de projectroot
+// Serve statische bestanden uit de projectroot
 app.use(express.static(path.join(__dirname)));
 
 
-/ Sessie-configuratie
+// Sessie-configuratie
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'fallback_secret_for_dev_ONLY', / Use environment variable!
+    secret: process.env.SESSION_SECRET || 'fallback_secret_for_dev_ONLY', // Use environment variable!
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', / true in production (HTTPS), false in development (HTTP)
-        httpOnly: true, / Prevents client-side JS from accessing the cookie
+        secure: process.env.NODE_ENV === 'production', // true in production (HTTPS), false in development (HTTP)
+        httpOnly: true, // Prevents client-side JS from accessing the cookie
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 24 / 24 hours
     }
 }));
 
-/ Database initialiseren
+// Database initialiseren
 const db = new sqlite3.Database('./data.db', (err) => {
     if (err) {
         console.error('Error connecting to database:', err.message);
@@ -46,7 +46,7 @@ const db = new sqlite3.Database('./data.db', (err) => {
 });
 
 db.serialize(() => {
-    / Aanwezigheid table with UNIQUE constraint
+    // Aanwezigheid table with UNIQUE constraint
     db.run(`CREATE TABLE IF NOT EXISTS aanwezigheid (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         gebruikersnaam TEXT NOT NULL,
@@ -71,7 +71,7 @@ db.serialize(() => {
         is_blocked INTEGER DEFAULT 0 NOT NULL
     )`);
 
-    / Add last_login / reset / is_blocked kolommen als ze ontbreken
+    // Add last_login / reset / is_blocked kolommen als ze ontbreken
     db.all("PRAGMA table_info(users)", (err, columns) => {
         if (err) {
             console.error("Error checking users table info:", err);
@@ -107,7 +107,7 @@ db.serialize(() => {
         }
     });
 
-    / Optioneel: admin gebruiker
+    // Optioneel: admin gebruiker
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'default_admin_password'; / Change in .env!
     const saltRounds = 10;
@@ -140,7 +140,7 @@ db.serialize(() => {
     });
 });
 
-/ Nodemailer transporter (MailHog standaard)
+// Nodemailer transporter (MailHog standaard)
 const transporter = nodemailer.createTransport({
     host: "localhost",
     port: 1025,
@@ -148,14 +148,14 @@ const transporter = nodemailer.createTransport({
     ignoreTLS: true,
 });
 
-/ Helpers
+// Helpers
 function generateToken() {
     return require('crypto').randomBytes(20).toString('hex');
 }
 
-/ E-mail templates (Inter + informeel)
+// E-mail templates (Inter + informeel)
 function emailBase({ title, bodyHtml }) {
-    / Let op: webfonts worden niet overal ondersteund, maar we voegen Inter toe waar mogelijk
+    // Let op: webfonts worden niet overal ondersteund, maar we voegen Inter toe waar mogelijk
     return `
 <!doctype html>
 <html lang="nl">
@@ -225,9 +225,9 @@ function welcomeMailHtml({ username, loginUrl }) {
     return emailBase({ title: 'Welkom bij de donderdagborrel', bodyHtml });
 }
 
-/ Middleware for authorization
+// Middleware for authorization
 
-/ Ensure the current session user is not blocked
+// Ensure the current session user is not blocked
 function ensureNotBlocked(req, res, next) {
     if (!req.session || !req.session.userId) return next();
     db.get(`SELECT is_blocked FROM users WHERE id = ?`, [req.session.userId], (err, row) => {
@@ -261,7 +261,7 @@ function isUser(req, res, next) {
     ensureNotBlocked(req, res, next);
 }
 
-/ --- Register endpoint ---
+// --- Register endpoint ---
 app.post('/api/register', async (req, res) => {
     const { username, email, password } = req.body;
 
@@ -294,7 +294,7 @@ app.post('/api/register', async (req, res) => {
                     return res.status(500).json({ message: 'Fout bij registratie.' });
                 }
 
-                / Stuur welkomstmail
+                // Stuur welkomstmail
                 const loginUrl = '/index.html';
                 const welcomeMail = {
                     from: 'Donderdagborrel <no-reply@donderdagborrel.nl>',
@@ -306,7 +306,7 @@ app.post('/api/register', async (req, res) => {
                 transporter.sendMail(welcomeMail, (mailErr, info) => {
                     if (mailErr) {
                         console.error('Kon welkomstmail niet versturen:', mailErr);
-                        / Fout loggen, maar de API-call slaagt wel
+                        // Fout loggen, maar de API-call slaagt wel
                     } else {
                         console.log('Welkomstmail verzonden:', info.messageId);
                     }
@@ -321,7 +321,7 @@ app.post('/api/register', async (req, res) => {
     });
 });
 
-/ --- Login endpoint ---
+// --- Login endpoint ---
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -351,7 +351,7 @@ app.post('/api/login', (req, res) => {
                 return res.status(401).json({ message: 'Ongeldige gebruikersnaam of wachtwoord.' });
             }
 
-            / Update last_login timestamp
+            // Update last_login timestamp
             const now = new Date().toISOString();
             db.run(`UPDATE users SET last_login = ? WHERE id = ?`, [now, user.id], (updateErr) => {
                 if (updateErr) {
@@ -359,7 +359,7 @@ app.post('/api/login', (req, res) => {
                 }
             });
 
-            / Inloggen succesvol: sessievariabelen instellen
+            // Inloggen succesvol: sessievariabelen instellen
             req.session.userId = user.id;
             req.session.username = user.username;
             req.session.role = user.role;
@@ -375,7 +375,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-/ --- Logout endpoint ---
+// --- Logout endpoint ---
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -387,9 +387,9 @@ app.post('/api/logout', (req, res) => {
     });
 });
 
-/ --- API endpoints ---
+// --- API endpoints ---
 
-/ Aanwezigheid registreren
+// Aanwezigheid registreren
 app.post('/api/aanwezigheid', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn om aanwezigheid te registreren.' });
@@ -421,7 +421,7 @@ app.post('/api/aanwezigheid', (req, res) => {
     );
 });
 
-/ Aanwezigheid verwijderen
+// Aanwezigheid verwijderen
 app.delete('/api/aanwezigheid', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn om aanwezigheid te verwijderen.' });
@@ -453,7 +453,7 @@ app.delete('/api/aanwezigheid', (req, res) => {
     );
 });
 
-/ Aanwezigen per datum
+// Aanwezigen per datum
 app.get('/api/aanwezigheid/datum/:datum', (req, res) => {
     const { datum } = req.params;
     db.all(
@@ -470,7 +470,7 @@ app.get('/api/aanwezigheid/datum/:datum', (req, res) => {
     );
 });
 
-/ Alle datums voor gebruiker
+// Alle datums voor gebruiker
 app.get('/api/aanwezigheid/gebruiker/:gebruikersnaam', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
@@ -494,7 +494,7 @@ app.get('/api/aanwezigheid/gebruiker/:gebruikersnaam', (req, res) => {
     );
 });
 
-/ Stats helpers
+// Stats helpers
 app.get('/api/attendance/user/:user', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
@@ -515,7 +515,7 @@ app.get('/api/attendance/user/:user', (req, res) => {
     );
 });
 
-/ Host ophalen
+// Host ophalen
 app.get('/api/host/:datum', (req, res) => {
     const { datum } = req.params;
     db.get(`SELECT host FROM hosts WHERE datum = ?`, [datum], (err, row) => {
@@ -527,7 +527,7 @@ app.get('/api/host/:datum', (req, res) => {
     });
 });
 
-/ Host verwijderen
+// Host verwijderen
 app.delete('/api/host/:datum', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
@@ -555,7 +555,7 @@ app.delete('/api/host/:datum', (req, res) => {
     );
 });
 
-/ Host datums per gebruiker
+// Host datums per gebruiker
 app.get('/api/hosts/gebruiker/:gebruikersnaam', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
@@ -576,7 +576,7 @@ app.get('/api/hosts/gebruiker/:gebruikersnaam', (req, res) => {
     );
 });
 
-/ Host toewijzen (ingelogde gebruiker)
+// Host toewijzen (ingelogde gebruiker)
 app.post('/api/host', isUser, (req, res) => {
     const { datum } = req.body;
     const host = req.session.username;
@@ -600,7 +600,7 @@ app.post('/api/host', isUser, (req, res) => {
     );
 });
 
-/ Host updaten (admin)
+// Host updaten (admin)
 app.post('/api/host/update/:datum', isAdmin, (req, res) => {
     const { datum } = req.params;
     const { host } = req.body;
@@ -623,7 +623,7 @@ app.post('/api/host/update/:datum', isAdmin, (req, res) => {
                 return res.status(500).json({ message: 'Fout bij opslaan host.' });
             }
 
-            / Zorg dat de host ook als aanwezig staat
+            // Zorg dat de host ook als aanwezig staat
             db.run(
                 `INSERT INTO aanwezigheid (gebruikersnaam, datum) VALUES (?, ?)
                  ON CONFLICT(gebruikersnaam, datum) DO NOTHING`,
@@ -639,7 +639,7 @@ app.post('/api/host/update/:datum', isAdmin, (req, res) => {
     );
 });
 
-/ Gebruikerslijst (admin)
+// Gebruikerslijst (admin)
 app.get('/api/users', isAdmin, (req, res) => {
   db.all(
     `SELECT username, email, last_login, role, is_blocked FROM users`,
@@ -655,7 +655,7 @@ app.get('/api/users', isAdmin, (req, res) => {
   );
 });
 
-/ Block a user
+// Block a user
 app.post('/api/users/:username/block', isAdmin, (req, res) => {
     const { username } = req.params;
     db.run(`UPDATE users SET is_blocked = 1 WHERE username = ?`, [username], function(err) {
@@ -665,7 +665,7 @@ app.post('/api/users/:username/block', isAdmin, (req, res) => {
     });
 });
 
-/ Unblock a user
+// Unblock a user
 app.post('/api/users/:username/unblock', isAdmin, (req, res) => {
     const { username } = req.params;
     db.run(`UPDATE users SET is_blocked = 0 WHERE username = ?`, [username], function(err) {
@@ -675,7 +675,7 @@ app.post('/api/users/:username/unblock', isAdmin, (req, res) => {
     });
 });
 
-/ Unieke gebruikers (voor statistieken)
+// Unieke gebruikers (voor statistieken)
 app.get('/api/users/list', (req, res) => {
     const sql = `
         SELECT username AS user FROM users
@@ -696,7 +696,7 @@ app.get('/api/users/list', (req, res) => {
     });
 });
 
-/ Aanwezigheid samenvatting
+// Aanwezigheid samenvatting
 app.get('/api/attendance/summary', (req, res) => {
     const startOfYear = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
@@ -717,7 +717,7 @@ app.get('/api/attendance/summary', (req, res) => {
     });
 });
 
-/ Hosts samenvatting
+// Hosts samenvatting
 app.get('/api/hosts/summary', (req, res) => {
     const startOfYear = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
@@ -738,7 +738,7 @@ app.get('/api/hosts/summary', (req, res) => {
     });
 });
 
-/ Wachtwoord vergeten aanvraag (informeel + Inter)
+// Wachtwoord vergeten aanvraag (informeel + Inter)
 app.post('/api/forgot-password', (req, res) => {
     const { email } = req.body;
 
@@ -751,7 +751,7 @@ app.post('/api/forgot-password', (req, res) => {
             console.error('Database error during forgot-password:', err);
             return res.status(500).json({ message: 'Er is een interne serverfout opgetreden.' });
         }
-        / Altijd zelfde antwoord om enumeratie te voorkomen
+        // Altijd zelfde antwoord om enumeratie te voorkomen
         const genericResponse = { message: 'Als het e-mailadres bekend is, is er een link voor het opnieuw instellen van het wachtwoord verzonden.' };
         if (!user) {
             return res.status(200).json(genericResponse);
@@ -789,7 +789,7 @@ app.post('/api/forgot-password', (req, res) => {
     });
 });
 
-/ Wachtwoord opnieuw instellen + bevestigingsmail
+// Wachtwoord opnieuw instellen + bevestigingsmail
 app.post('/api/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
 
@@ -817,7 +817,7 @@ app.post('/api/reset-password', async (req, res) => {
                         return res.status(500).json({ message: 'Fout bij het bijwerken van het wachtwoord.' });
                     }
 
-                    / Verstuur bevestigingsmail (informeel + Inter)
+                    // Verstuur bevestigingsmail (informeel + Inter)
                     const loginUrl = '/index.html';
                     const confirmMail = {
                         from: 'Donderdagborrel <no-reply@donderdagborrel.nl>',
@@ -828,12 +828,12 @@ app.post('/api/reset-password', async (req, res) => {
 
                     transporter.sendMail(confirmMail, (mailErr, info) => {
                         if (mailErr) {
-                            / Loggen maar de API-call zelf slaagt gewoon
+                            // Loggen maar de API-call zelf slaagt gewoon
                             console.error('Kon bevestigingsmail niet versturen:', mailErr);
                         } else {
                             console.log('Bevestigingsmail verzonden:', info.messageId);
                         }
-                        / In alle gevallen een succesvolle response geven na password update
+                        // In alle gevallen een succesvolle response geven na password update
                         res.status(200).json({ message: 'Wachtwoord succesvol opnieuw ingesteld.' });
                     });
                 }
@@ -845,7 +845,7 @@ app.post('/api/reset-password', async (req, res) => {
     });
 });
 
-/ NIEUW ENDPOINT: Suggestie versturen
+// NIEUW ENDPOINT: Suggestie versturen
 app.post('/api/suggestie', isUser, async (req, res) => {
     const { gebruikersnaam, suggestie } = req.body;
 
@@ -888,8 +888,8 @@ app.listen(port, () => {
     }
 });
 
-/ Homepage expliciet serveren
-/ Alias-routes voor losse HTML-pagina's
+// Homepage expliciet serveren
+// Alias-routes voor losse HTML-pagina's
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/settings', (req, res) => res.sendFile(path.join(__dirname, 'settings.html')));
 app.get('/statistieken', (req, res) => res.sendFile(path.join(__dirname, 'statistieken.html')));

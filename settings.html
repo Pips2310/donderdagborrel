@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Algemene uitlijning en container */
+    //* Algemene uitlijning en container */
     .panel-container {
       display: flex;
       flex-direction: column;
@@ -17,7 +17,7 @@
       width: 100%;
     }
 
-    /* Paneelstyling */
+    //* Paneelstyling */
     .panel {
       background-color: white;
       border-radius: 12px;
@@ -25,7 +25,7 @@
       overflow: hidden; /* Zorgt dat de afgeronde hoeken werken */
     }
 
-    /* Accordion-trigger-knop */
+    //* Accordion-trigger-knop */
     .accordion-trigger {
       width: 100%;
       display: flex;
@@ -49,7 +49,7 @@
       transform: rotate(90deg);
     }
     
-    /* Accordion-inhoud */
+    //* Accordion-inhoud */
     .accordion-content {
       max-height: 0;
       overflow: hidden;
@@ -62,7 +62,7 @@
       padding: 0 1rem 1rem 1rem;
     }
 
-    /* iOS-style switch */
+    //* iOS-style switch */
     .ios-switch { position: relative; display: inline-block; width: 48px; height: 28px; }
     .ios-switch input { opacity: 0; width: 0; height: 0; }
     .ios-slider { position: absolute; cursor: pointer; inset: 0; background-color: #e5e7eb; transition: 0.25s; border-radius: 9999px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08); }
@@ -147,8 +147,8 @@
 
   <script src="script.js"></script>
   <script>
-    / Zorgt voor de accordion functionaliteit en het versturen van suggesties
-    / Blijft inline omdat de functies `showModal` en `loader` op de pagina beschikbaar moeten zijn
+    // Zorgt voor de accordion functionaliteit en het versturen van suggesties
+    // Blijft inline omdat de functies `showModal` en `loader` op de pagina beschikbaar moeten zijn
     (function(){
       if (window.__settingsInlineInit) return;
       window.__settingsInlineInit = true;
@@ -173,7 +173,7 @@
         var loader = document.getElementById('suggestionLoader');
         var messageDiv = document.getElementById('suggestionMessage');
         
-        / Simpele functie als showModal uit de andere script.js niet geladen is
+        // Simpele functie als showModal uit de andere script.js niet geladen is
         function showModalCompat(title, msg){
           if (typeof window.showModal === 'function') return window.showModal(title, msg);
           alert(title + '\n\n' + (typeof msg === 'string' ? msg : ''));
@@ -215,7 +215,7 @@
     })();
   </script>
   <script>
-    / Schakelaar voor de e-mailreminder
+    // Schakelaar voor de e-mailreminder
     (function(){
       function bindReminderToggle(){
         var t = document.getElementById('emailReminderToggle');

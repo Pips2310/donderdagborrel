@@ -1,19 +1,19 @@
-/ v1.13 2025-08-30 — Host-paneel verwijderd; links-swipe toont kroon binnen main (zonder 3e paneel)
-/ v1.12 2025-08-30 — Visuele swipe-links animaties: calendar schuift weg, teksten naar links, crown schuift in met 'flikker'
-/ v1.10 2025-08-30 — Swipe naar host-paneel alleen als host 'Niet bekend' is; live-drag naar rechts geblokkeerd indien host bekend
-/ v1.9 2025-08-28 — Live drag AAN in beide richtingen (symmetrisch), consistente snap-logica (attendees↔main↔host)
-/ v1.7 2025-08-28 — Swipe links/rechts symmetrisch (snap); (v1.8 met no-drag is teruggedraaid)
-/ v1.6 2025-08-27 — overflow-hidden fix host-panel
-/ v1.5 2025-08-27 — compact host-paneel (voorstel B)
-/ v1.4 2025-08-27 — voorstel B (accent-ring + puls)
-/ v1.3 2025-02-25 — geschiedenis: transparante panel-bg
-/ v1.2 2025-02-25 — kroon in geschiedenis
+// v1.13 2025-08-30 — Host-paneel verwijderd; links-swipe toont kroon binnen main (zonder 3e paneel)
+// v1.12 2025-08-30 — Visuele swipe-links animaties: calendar schuift weg, teksten naar links, crown schuift in met 'flikker'
+// v1.10 2025-08-30 — Swipe naar host-paneel alleen als host 'Niet bekend' is; live-drag naar rechts geblokkeerd indien host bekend
+// v1.9 2025-08-28 — Live drag AAN in beide richtingen (symmetrisch), consistente snap-logica (attendees↔main↔host)
+// v1.7 2025-08-28 — Swipe links/rechts symmetrisch (snap); (v1.8 met no-drag is teruggedraaid)
+// v1.6 2025-08-27 — overflow-hidden fix host-panel
+// v1.5 2025-08-27 — compact host-paneel (voorstel B)
+// v1.4 2025-08-27 — voorstel B (accent-ring + puls)
+// v1.3 2025-02-25 — geschiedenis: transparante panel-bg
+// v1.2 2025-02-25 — kroon in geschiedenis
 const API_URL = '/api';
 let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 let userRole = localStorage.getItem('userRole') || '';
 let resolveModalPromise; / Used for showConfirm modal
 
-/** Inline attendees with "+X meer" and modal for full list */
+//** Inline attendees with "+X meer" and modal for full list */
 function renderAttendeesInline(containerEl, names, opts = {}) {
   const MAX_INLINE = opts.maxInline ?? 6; / show up to 6 inline
   if (!containerEl) return;
@@ -27,12 +27,12 @@ function renderAttendeesInline(containerEl, names, opts = {}) {
   const shown = names.slice(0, MAX_INLINE);
   const rest = names.length - shown.length;
 
-  / Base text "Aanwezigen: A, B, C"
+  // Base text "Aanwezigen: A, B, C"
   const base = document.createElement('span');
   base.textContent = 'Aanwezigen: ' + shown.join(', ');
   containerEl.appendChild(base);
 
-  / “+X meer” button (if needed)
+  // “+X meer” button (if needed)
   if (rest > 0) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -50,7 +50,7 @@ function renderAttendeesInline(containerEl, names, opts = {}) {
   }
 }
 
-/** Render names-only for attendee panel with a single “+X meer” button (no duplicate) */
+//** Render names-only for attendee panel with a single “+X meer” button (no duplicate) */
 function renderAttendeePanelNames(targetEl, names, opts = {}) {
   if (!targetEl) return;
   targetEl.innerHTML = '';
@@ -59,7 +59,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
   const isMobile = (opts.forceMobile === true) || (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 639px)').matches);
 
   if (isMobile) {
-    / ===== MOBILE: 3 rijen × 3 kolommen, laatste cel = +X meer =====
+    // ===== MOBILE: 3 rijen × 3 kolommen, laatste cel = +X meer =====
     const rows = opts.rows ?? 3;
     const cols = opts.cols ?? 3;
     const MAX_CELLS = opts.maxCells ?? (rows * cols); / standaard 9
@@ -68,7 +68,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
     list.className = 'attendee-grid';
 
     if (allNames.length === 0) {
-      / Plaats de boodschap in de eerste cel en vul aan tot MAX_CELLS voor vaste hoogte
+      // Plaats de boodschap in de eerste cel en vul aan tot MAX_CELLS voor vaste hoogte
       const li = document.createElement('li');
       li.textContent = 'Geen aanwezigen.';
       list.appendChild(li);
@@ -111,7 +111,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
       list.appendChild(moreLi);
     }
 
-    / Vul tot exact MAX_CELLS voor vaste paneelhoogte
+    // Vul tot exact MAX_CELLS voor vaste paneelhoogte
     let current = list.children.length;
     while (current < MAX_CELLS) {
       const filler = document.createElement('li');
@@ -124,7 +124,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
     return;
   }
 
-  / ===== DESKTOP (fallback): behoud bestaande inline-weergave met clamping =====
+  // ===== DESKTOP (fallback): behoud bestaande inline-weergave met clamping =====
   const MAX_INLINE = opts.maxInline ?? 12;
   const shown = allNames.slice(0, MAX_INLINE);
   const rest = allNames.length - shown.length;
@@ -155,7 +155,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
 }
 
 
-/** Dedicated modal to show full attendee list with proper HTML layout */
+//** Dedicated modal to show full attendee list with proper HTML layout */
 function showAttendeesModal(names) {
   const modal = document.getElementById('customModal');
   const titleEl = document.getElementById('modalTitle');
@@ -251,7 +251,7 @@ function login() {
 
 
 
-/** Register */
+//** Register */
 function registerUser() {
     const username = document.getElementById("regUsername").value.trim();
     const email = document.getElementById("regEmail").value.trim();
@@ -276,7 +276,7 @@ function registerUser() {
 }
 
 
-/** Logout */
+//** Logout */
 function logout() {
     localStorage.removeItem('gebruikersnaam');
     localStorage.removeItem('userRole');
@@ -286,7 +286,7 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-/** App tonen */
+//** App tonen */
 async function toonApp() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
@@ -307,7 +307,7 @@ async function toonApp() {
     }
 }
 
-/** Donderdagen 2025 */
+//** Donderdagen 2025 */
 function alleDonderdagen() {
     const data = [];
     let datum = new Date(Date.UTC(2025, 0, 2));
@@ -319,7 +319,7 @@ function alleDonderdagen() {
     return data;
 }
 
-/** API helpers */
+//** API helpers */
 async function fetchHost(datum) {
     try {
         const res = await fetch(`${API_URL}/host/${datum}`, { credentials: 'include' });
@@ -405,7 +405,7 @@ async function removeHost(datum) {
     } catch { showModal('Fout','Algemene fout bij host verwijderen.'); return false; }
 }
 
-/** Accordeon-item */
+//** Accordeon-item */
 async function createAccordionItem(datum, isVerleden) {
     const acc = document.createElement('div');
     acc.dataset.datum = datum;
@@ -425,7 +425,7 @@ if (isVerleden) acc.classList.add('panel-verleden');
     acc.appendChild(greenStrip);
 
     if (!isVerleden) {
-        / ===== TOEKOMST: 3 panelen =====
+        // ===== TOEKOMST: 3 panelen =====
         const swipeContainer = document.createElement('div');
         swipeContainer.className = 'swipe-container relative w-full';
         swipeContainer.innerHTML = `
@@ -469,7 +469,7 @@ if (isVerleden) acc.classList.add('panel-verleden');
         const hostCrownWrapper = mainPanel.querySelector('#hostCrownWrapper');
         const hostCrownIcon = mainPanel.querySelector('#hostCrownIcon');
         
-        / --- [PATCH] Klik op kroon om host te worden (of jezelf afmelden) ---
+        // --- [PATCH] Klik op kroon om host te worden (of jezelf afmelden) ---
         try {
             if (hostCrownIcon) {
                 hostCrownIcon.addEventListener('click', async (e) => {
@@ -479,17 +479,17 @@ if (isVerleden) acc.classList.add('panel-verleden');
                         return;
                     }
 
-                    / Altijd even de meest recente host ophalen
+                    // Altijd even de meest recente host ophalen
                     let updatedHostNow = currentHostCached;
                     try { updatedHostNow = await fetchHost(datum); } catch (e) {}
 
-                    / 1) Jij bent host -> afmelden
+                    // 1) Jij bent host -> afmelden
                     if (updatedHostNow === gebruikersnaam) {
                         const confirmUnHost = await showConfirm('Afmelden als Host', 'Weet je zeker dat je je wilt afmelden als host?');
                         if (confirmUnHost) {
                             const ok = await removeHost(datum);
                             if (ok) {
-                                / zelfde flow als op de mainPanel klik
+                                // zelfde flow als op de mainPanel klik
                                 localStorage.setItem('pendingGuestUnsubscribe', 'true');
                                 localStorage.setItem('actionDate', datum);
                                 await toonDagen();
@@ -498,7 +498,7 @@ if (isVerleden) acc.classList.add('panel-verleden');
                         return;
                     }
 
-                    / 2) Host onbekend -> jij host worden
+                    // 2) Host onbekend -> jij host worden
                     if (!updatedHostNow || updatedHostNow === 'Niet bekend') {
                         const dateObj = new Date(datum + 'T00:00:00Z');
 const day = dateObj.getUTCDate();
@@ -523,12 +523,12 @@ const confirmHost = await showConfirm(
                         return;
                     }
 
-                    / 3) Iemand anders is al host -> niets doen
+                    // 3) Iemand anders is al host -> niets doen
                     return;
                 }, { passive: true });
             }
         } catch (e) { /* noop */ }
-        / --- [/PATCH] ---
+        // --- [/PATCH] ---
     const mobileAttendeeCountDisplay = mainPanel.querySelector('[data-mobile-attendee-count]');
         const desktopAttendeeListDisplay = mainPanel.querySelector('[data-desktop-attendee-list]');
         const dateDisplay = mainPanel.querySelector('[data-date-display]');
@@ -538,7 +538,7 @@ const confirmHost = await showConfirm(
 
         
         let currentHostCached = null; / wordt gezet in _updateAccordionItemUI()
-/ start op main (index 1)
+// start op main (index 1)
         let panelIndex = 1; / 0 attendees, 1 main, 2 host
         const hasHostPanel = false;
 
@@ -556,7 +556,7 @@ const confirmHost = await showConfirm(
             const crownWrapper = acc.querySelector('#hostCrownWrapper');
             const calDay = acc.querySelector('[data-cal-day]');
 
-            / Kalender verdwijnt + breedte vrijgeven
+            // Kalender verdwijnt + breedte vrijgeven
             if (cal) {
                 cal.classList.add('-translate-x-full', 'opacity-0', 'w-0');
                 cal.classList.remove('w-16');
@@ -565,21 +565,21 @@ const confirmHost = await showConfirm(
                 calDay.style.opacity = '0';
             }
 
-            / Tekst schuift mee
+            // Tekst schuift mee
             if (mainText) {
                 mainText.classList.remove('ml-7');
                 mainText.classList.add('ml-3');
             }
 
-            / Crown: van rechts inschuiven met fade-in + pulserende ring
+            // Crown: van rechts inschuiven met fade-in + pulserende ring
             if (typeof currentHostCached !== 'undefined' && (!currentHostCached || currentHostCached === 'Niet bekend') && crownWrapper) {
                 crownWrapper.classList.remove('hidden');
-                / Startpositie buiten beeld rechts
+                // Startpositie buiten beeld rechts
                 crownWrapper.classList.add('translate-x-12', 'opacity-0');
                 crownWrapper.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
-                / Reflow forceren zodat transition pakt
+                // Reflow forceren zodat transition pakt
                 void crownWrapper.offsetWidth;
-                / Eindpositie: in beeld
+                // Eindpositie: in beeld
                 crownWrapper.classList.remove('translate-x-12', 'opacity-0');
                 crownWrapper.classList.add('translate-x-0', 'opacity-100', 'ring-animated');
             }
@@ -609,17 +609,17 @@ const confirmHost = await showConfirm(
             }
 
             if (crownWrapper) {
-                / Als gebruiker host is: kroon altijd zichtbaar
+                // Als gebruiker host is: kroon altijd zichtbaar
                 if (typeof currentHostCached !== 'undefined' && currentHostCached === gebruikersnaam) {
                     crownWrapper.classList.remove('hidden', 'translate-x-12', 'opacity-0', 'ring-animated');
                     crownWrapper.classList.add('translate-x-0', 'opacity-100');
                 } else if (typeof currentHostCached !== 'undefined' && (!currentHostCached || currentHostCached === 'Niet bekend')) {
-                    / Host onbekend: kroon klaarzetten buiten beeld rechts
+                    // Host onbekend: kroon klaarzetten buiten beeld rechts
                     crownWrapper.classList.remove('hidden');
                     crownWrapper.classList.remove('translate-x-0', 'opacity-100');
                     crownWrapper.classList.add('translate-x-12', 'opacity-0', 'ring-animated');
                 } else {
-                    / Andere host bekend: verbergen
+                    // Andere host bekend: verbergen
                     crownWrapper.classList.add('hidden');
                     crownWrapper.classList.remove('translate-x-0', 'opacity-100', 'ring-animated');
                     crownWrapper.classList.add('translate-x-12', 'opacity-0');
@@ -640,24 +640,24 @@ const confirmHost = await showConfirm(
                 const crownWrapper = acc.querySelector('#hostCrownWrapper');
                 if (crownWrapper) {
                     if (currentHostCached === gebruikersnaam) {
-                        / Gebruiker is host: kroon altijd zichtbaar op main
+                        // Gebruiker is host: kroon altijd zichtbaar op main
                         crownWrapper.classList.remove('hidden', 'translate-x-12', 'opacity-0', 'ring-animated');
                         crownWrapper.classList.add('translate-x-0', 'opacity-100');
                     } else if (!currentHostCached || currentHostCached === 'Niet bekend') {
-                        / Host onbekend
+                        // Host onbekend
                         crownWrapper.classList.remove('hidden');
                         if (window.innerWidth >= 640) {
-                            / Desktop: toon direct met puls om aan te melden
+                            // Desktop: toon direct met puls om aan te melden
                             crownWrapper.classList.remove('translate-x-12', 'opacity-0');
                             crownWrapper.classList.add('translate-x-0', 'opacity-100', 'ring-animated');
                         } else {
-                            / Mobile: buiten beeld houden tot swipe-animatie
+                            // Mobile: buiten beeld houden tot swipe-animatie
                             crownWrapper.classList.remove('translate-x-0', 'opacity-100');
                             crownWrapper.classList.add('translate-x-12', 'opacity-0', 'ring-animated');
                         }
     
                     } else {
-                        / Andere host: verbergen
+                        // Andere host: verbergen
                         crownWrapper.classList.add('hidden');
                         crownWrapper.classList.remove('translate-x-0', 'opacity-100', 'ring-animated');
                         crownWrapper.classList.add('translate-x-12', 'opacity-0');
@@ -666,13 +666,13 @@ const confirmHost = await showConfirm(
             } catch(e) { /* noop */ }
             
             
-            / Als host bekend wordt, herstel UI-effecten
+            // Als host bekend wordt, herstel UI-effecten
             try {
                 if (currentHostCached && currentHostCached !== 'Niet bekend') {
                     resetSwipeLeftEffects(acc);
                 }
             } catch(e) {}
-            / Als host nu bekend is en we staan op host-paneel, ga terug naar main
+            // Als host nu bekend is en we staan op host-paneel, ga terug naar main
             try {
                 if (currentHostCached && currentHostCached !== 'Niet bekend' && typeof panelIndex !== 'undefined' && panelIndex === 2) {
                     panelIndex = 1;
@@ -696,7 +696,7 @@ const confirmHost = await showConfirm(
 
             hostNameDisplay.textContent = currentHostNow;
             if (hostCrownIcon) {
-                / Cursor pointer bij eigen host óf wanneer nog geen host bekend is
+                // Cursor pointer bij eigen host óf wanneer nog geen host bekend is
                 if (currentHostNow === gebruikersnaam || !currentHostNow || currentHostNow === 'Niet bekend') {
                     hostCrownIcon.classList.add('cursor-pointer');
                 } else {
@@ -717,9 +717,9 @@ const confirmHost = await showConfirm(
             }
 
             mobileAttendeeCountDisplay.textContent = `Aanwezigen: ${aanwezigen.length === 0 ? 'Geen' : aanwezigen.length}`;
-            / Desktop: inline + “+X meer”
+            // Desktop: inline + “+X meer”
 renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
-            / Aanwezigen-paneel (zonder dubbel label)
+            // Aanwezigen-paneel (zonder dubbel label)
 renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
 
             const newBorderClass = aanwezig ? 'border-green-500 border-2' : 'border-gray-200';
@@ -731,7 +731,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
         window.addEventListener('resize', _updateAccordionItemUI);
         _updateAccordionItemUI();
 
-        / klik: aanwezig toggle of unhost
+        // klik: aanwezig toggle of unhost
         mainPanel.addEventListener('click', async () => {
             if (!gebruikersnaam) return showModal('Inloggen vereist', 'Log in om je aanwezigheid te wijzigen.');
             const updatedHost = await fetchHost(datum);
@@ -753,7 +753,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
             }
         });
 
-        / Host worden
+        // Host worden
         if (setHostButton) {
             setHostButton.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -769,11 +769,11 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
             });
         }
 
-        / ===== SWIPE: live drag symmetrisch =====
+        // ===== SWIPE: live drag symmetrisch =====
         if (window.innerWidth < 640) {
             let startX = 0, startY = 0, currentX = 0, isSwiping = false, startOffset = -100 * panelIndex;
 
-            / Als host bekend is, blokkeren we schuiven naar het host-paneel (rechts van main)
+            // Als host bekend is, blokkeren we schuiven naar het host-paneel (rechts van main)
             const minOffset = (hasHostPanel && (currentHostCached === null || currentHostCached === 'Niet bekend')) ? -200 : -100;
             const maxOffset = 0;
             
@@ -793,13 +793,13 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 const diffY = e.touches[0].clientY - startY;
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
 
-                / Live drag: offset = startOffset + delta
+                // Live drag: offset = startOffset + delta
                 let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
                 
-                / --- Live preview fix ---
+                // --- Live preview fix ---
                 try {
                     const crownWrapper = acc.querySelector('#hostCrownWrapper');
                     const cal = acc.querySelector('[data-cal-icon]');
@@ -836,15 +836,15 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 const goRight = deltaX < -thresholdPx();  / vinger naar links  -> terug naar main of host-animatie
 
                 if (panelIndex === 1 && goLeft) {
-                    / Main -> Attendees
+                    // Main -> Attendees
                     resetSwipeLeftEffects(acc);
                     panelIndex = 0;
                 } else if (panelIndex === 0 && goRight) {
-                    / Attendees -> Main
+                    // Attendees -> Main
                     resetSwipeLeftEffects(acc);
                     panelIndex = 1;
                 } else if (panelIndex === 1 && goRight) {
-                    / Binnen main: alleen host-animatie als host onbekend
+                    // Binnen main: alleen host-animatie als host onbekend
                     if (currentHostCached === null || currentHostCached === 'Niet bekend') {
                         applySwipeLeftEnterEffects(acc);
                         panelIndex = 1; / blijf op main
@@ -855,14 +855,14 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 }
                 setTransformByIndex(panelIndex, true);
                 
-                / Deze regel is verwijderd omdat hij de kroon onmiddellijk weer verbergt
-                / _updateAccordionItemUI();
+                // Deze regel is verwijderd omdat hij de kroon onmiddellijk weer verbergt
+                // _updateAccordionItemUI();
             });
         } else {
             setTransformByIndex(panelIndex, false);
         }
     } else {
-        / ===== GESCHIEDENIS: 2 panelen =====
+        // ===== GESCHIEDENIS: 2 panelen =====
         const swipeContainer = document.createElement('div');
         acc.className = 'bg-white py-2 px-4 rounded-lg shadow-md flex flex-col gap-4 border-gray-200 panel-verleden cursor-not-allowed relative overflow-hidden';
         swipeContainer.className = 'swipe-container relative w-full';
@@ -941,7 +941,7 @@ renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
             if (attendeeNamesDisplay) / Aanwezigen-paneel (zonder dubbel label)
 renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
         
-            / Toon gedempte kroon in geschiedenis wanneer de ingelogde gebruiker host was
+            // Toon gedempte kroon in geschiedenis wanneer de ingelogde gebruiker host was
             try {
                 const crownWrap = mainPanel.querySelector('[data-history-crown-wrap]');
                 if (crownWrap) {
@@ -982,12 +982,12 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
                 
-                / --- Live preview fix ---
+                // --- Live preview fix ---
                 try {
                     const crownWrapper = acc.querySelector('#hostCrownWrapper');
                     const cal = acc.querySelector('[data-cal-icon]');
                     const mainText = acc.querySelector('[data-main-text]');
-                    / progressLeft: only when dragging left (diffX < 0) from main panel
+                    // progressLeft: only when dragging left (diffX < 0) from main panel
                     let progressLeft = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
@@ -1027,7 +1027,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
     return acc;
 }
 
-/** Dagen laden */
+//** Dagen laden */
 async function toonDagen() {
     const lijst = document.getElementById('dagenLijst');
     lijst.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden donderdagen...</div>';
@@ -1065,7 +1065,7 @@ let _histReachedStart = false;
 let _histIndex = 0; / (legacy; unused for history batches) / next index into reversed history
 const _histBatch = 4;
 const _histChrono = [...geschiedenis].sort((a, b) => new Date(a) - new Date(b)); let _histNextEnd = _histChrono.length; / exclusive end index for next batch (start with latest)
-/ recent -> oud
+// recent -> oud
 
 historyButton.addEventListener('click', async () => {
     const historyContent = document.getElementById('historyContent');
@@ -1073,9 +1073,9 @@ historyButton.addEventListener('click', async () => {
     const chevronR = document.getElementById('historyChevronTrailing');
     const titleSpan = historyButton.querySelector('.text-lg');
 
-    / Als we volledig geladen hebben en gebruiker klikt: inklappen & reset
+    // Als we volledig geladen hebben en gebruiker klikt: inklappen & reset
     if (_histActief && _histReachedStart) {
-        / Inklappen/reset
+        // Inklappen/reset
         historyContent.innerHTML = '';
         historyContent.classList.add('hidden');
         chevronL.textContent = '▼'; chevronR.textContent = '▼';
@@ -1086,7 +1086,7 @@ historyButton.addEventListener('click', async () => {
         return;
     }
 
-    / Eerste klik of vervolgklikken tijdens laden
+    // Eerste klik of vervolgklikken tijdens laden
     if (historyContent.classList.contains('hidden')) {
         historyContent.classList.remove('hidden');
         chevronL.textContent = '▲'; chevronR.textContent = '▲';
@@ -1094,10 +1094,10 @@ historyButton.addEventListener('click', async () => {
         _histActief = true;
     }
 
-    / Batch laden
+    // Batch laden
     const end = _histNextEnd;
 const start = Math.max(0, end - _histBatch);
-    / Toon loader als er nog niets staat
+    // Toon loader als er nog niets staat
     if (_histIndex === 0 && !historyContent.children.length) {
         historyContent.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden geschiedenis...</div>';
     }
@@ -1109,12 +1109,12 @@ const start = Math.max(0, end - _histBatch);
         frag.appendChild(accItem);
     }
 
-    / Verwijder loader en append
+    // Verwijder loader en append
     const maybeLoader = historyContent.querySelector('.loader');
 if (maybeLoader && historyContent.children.length === 1) {
   historyContent.innerHTML = '';
 }
-/ Voeg batches steeds vóór bestaande inhoud toe, zodat de volgorde chronologisch blijft
+// Voeg batches steeds vóór bestaande inhoud toe, zodat de volgorde chronologisch blijft
 if (historyContent.firstChild) {
   historyContent.insertBefore(frag, historyContent.firstChild);
 } else {
@@ -1124,7 +1124,7 @@ if (historyContent.firstChild) {
     _histNextEnd = start;
 _histReachedStart = _histNextEnd <= 0;
 
-    / Als we klaar zijn, zet titel op Inklappen
+    // Als we klaar zijn, zet titel op Inklappen
     if (_histReachedStart && titleSpan) {
         titleSpan.textContent = 'Inklappen';
     }
@@ -1154,7 +1154,7 @@ _histReachedStart = _histNextEnd <= 0;
 
 }
 
-/** User menu */
+//** User menu */
 function setupUserMenu() {
     const userIcon = document.getElementById('userIcon');
     const dropdown = document.getElementById('dropdownMenu');
@@ -1183,7 +1183,7 @@ function setupUserMenu() {
     });
 }
 
-/** Modals */
+//** Modals */
 const registrationModal = document.getElementById("registrationModal");
 const forgotPasswordModal = document.getElementById("forgotPasswordModal");
 
@@ -1275,8 +1275,7 @@ async function requestPasswordReset() {
         
         const data = await response.json();
 
-        / De API geeft altijd een succesvol bericht terug, ongeacht of het e-mailadres bestaat,
-        / om gebruikersnamen niet te lekken. We tonen altijd hetzelfde succesbericht.
+        // De API geeft altijd een succesvol bericht terug, ongeacht of het e-mailadres bestaat, // om gebruikersnamen niet te lekken. We tonen altijd hetzelfde succesbericht.
         showModal('Succes', data.message || 'Als het e-mailadres bekend is, is er een link voor het opnieuw instellen van het wachtwoord verzonden.');
         forgotPasswordModal.classList.add('hidden');
         document.getElementById('forgotPasswordForm').reset();
@@ -1289,7 +1288,7 @@ async function requestPasswordReset() {
 }
 
 
-/** Initial load */
+//** Initial load */
 window.onload = () => {
     gebruikersnaam = localStorage.getItem('gebruikersnaam');
     userRole = localStorage.getItem('userRole');
@@ -1326,7 +1325,7 @@ window.onload = () => {
         });
     }
 
-    / Nieuwe functionaliteit voor wachtwoord vergeten
+    // Nieuwe functionaliteit voor wachtwoord vergeten
     document.getElementById("wachtwoordVergetenLink").onclick = (e) => {
         e.preventDefault();
         forgotPasswordModal.classList.remove('hidden');
@@ -1338,7 +1337,7 @@ window.onload = () => {
 };
 
 
-/* === Geschiedenis-accordeon v1.0 === */
+//* === Geschiedenis-accordeon v1.0 === */
 (() => {
   const BTN_ID = 'geschiedenisKnop';
   const BATCH = 4;
@@ -1423,7 +1422,7 @@ window.onload = () => {
     if ($btn) $btn.textContent = 'Geschiedenis';
   }
 
-  / Optioneel support voor her-render van de lijst
+  // Optioneel support voor her-render van de lijst
   document.addEventListener('toonDagen:rendered', () => {
     volgendeIndex = null;
     geladenSet.clear();
@@ -1431,18 +1430,18 @@ window.onload = () => {
   });
 })();
 
-/* ===== Settings page helpers (accordions + suggestions) ===== */
+//* ===== Settings page helpers (accordions + suggestions) ===== */
 (() => {
-  / Avoid double-declare
+  // Avoid double-declare
   if (window.__settingsHelpersInit) return;
   window.__settingsHelpersInit = true;
 
   function ensureModal() {
-    / Use existing modal if present on the page
+    // Use existing modal if present on the page
     let overlay = document.getElementById('customModal');
     if (overlay) return overlay;
 
-    / Otherwise, create a minimal modal (non-intrusive for pages without it)
+    // Otherwise, create a minimal modal (non-intrusive for pages without it)
     overlay = document.createElement('div');
     overlay.id = 'customModal';
     overlay.className = 'fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 hidden';
@@ -1470,7 +1469,7 @@ window.onload = () => {
     return overlay;
   }
 
-  / Define showModal if not already available on page scripts
+  // Define showModal if not already available on page scripts
   if (typeof window.showModal !== 'function') {
     window.showModal = function(title, messageContent, buttons = []) {
       const modalOverlay = ensureModal();
@@ -1508,7 +1507,7 @@ window.onload = () => {
 
   function initAccordions() {
     document.querySelectorAll('[data-accordion-trigger]').forEach(btn => {
-      / Prevent double-binding
+      // Prevent double-binding
       if (btn.__accordionBound) return;
       btn.__accordionBound = true;
 
@@ -1518,7 +1517,7 @@ window.onload = () => {
         const wasOpen = section.classList.contains('accordion-open');
         section.classList.toggle('accordion-open', !wasOpen);
 
-        / rotate chevron (expects wrapper with inline-flex)
+        // rotate chevron (expects wrapper with inline-flex)
         const iconWrap = btn.querySelector('span.inline-flex');
         if (iconWrap) iconWrap.classList.toggle('rotate-90', !wasOpen);
       });
@@ -1534,7 +1533,7 @@ window.onload = () => {
     const loader = document.getElementById('suggestionLoader') || document.createElement('div');
     const messageDiv = document.getElementById('suggestionMessage') || document.createElement('div');
 
-    / Provide defaults if not present on the page
+    // Provide defaults if not present on the page
     if (!loader.id) {
       loader.id = 'suggestionLoader';
       loader.className = 'hidden';
