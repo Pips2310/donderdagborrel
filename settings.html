@@ -147,8 +147,8 @@
 
   <script src="script.js"></script>
   <script>
-    // Zorgt voor de accordion functionaliteit en het versturen van suggesties
-    // Blijft inline omdat de functies `showModal` en `loader` op de pagina beschikbaar moeten zijn
+    / Zorgt voor de accordion functionaliteit en het versturen van suggesties
+    / Blijft inline omdat de functies `showModal` en `loader` op de pagina beschikbaar moeten zijn
     (function(){
       if (window.__settingsInlineInit) return;
       window.__settingsInlineInit = true;
@@ -173,7 +173,7 @@
         var loader = document.getElementById('suggestionLoader');
         var messageDiv = document.getElementById('suggestionMessage');
         
-        // Simpele functie als showModal uit de andere script.js niet geladen is
+        / Simpele functie als showModal uit de andere script.js niet geladen is
         function showModalCompat(title, msg){
           if (typeof window.showModal === 'function') return window.showModal(title, msg);
           alert(title + '\n\n' + (typeof msg === 'string' ? msg : ''));
@@ -185,7 +185,7 @@
           if (!suggestion) { showModalCompat('Waarschuwing','Vul een suggestie in voordat je verstuurt.'); return; }
           if (loader) loader.classList.remove('hidden');
           if (messageDiv) messageDiv.textContent='';
-          var API_URL = (window.API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
+          var API_URL = (window.API_URL || '/api').replace(/\/$/, '');
           var gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
           
           fetch(API_URL + '/suggestie', {
@@ -215,7 +215,7 @@
     })();
   </script>
   <script>
-    // Schakelaar voor de e-mailreminder
+    / Schakelaar voor de e-mailreminder
     (function(){
       function bindReminderToggle(){
         var t = document.getElementById('emailReminderToggle');
