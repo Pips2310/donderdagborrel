@@ -1,83 +1,72 @@
-# Donderdag — Website
+# Donderdag — Website_ready_v2
 
-Dit is de website/app om aanwezigheid en hosts bij te houden voor de donderdagborrel.
+Deze repo bevat een Node.js/Express-app met een SQLite database (`data.db`) en een statische front-end (`index.html`, `style.css`, `script.js`).
 
-## Stack
-- Node.js + Express
-- SQLite (lokaal bestand)
-- Sessies met `express-session`
-- E-mail via `nodemailer`
+## Lokale ontwikkeling
 
-## Snel starten (lokaal)
+1. **Vereisten**: Node 18+
+2. **Installeer dependencies**
+   ```bash
+   npm install
+   ```
+3. **(Optioneel) maak een `.env` aan** met waarden voor de onderstaande variabelen (alleen als je ze gebruikt in `server.js`): `ADMIN_PASSWORD, ADMIN_USERNAME, NODE_ENV, PORT, SESSION_SECRET`
+4. **Start de server**
+   ```bash
+   npm start
+   ```
+5. De app draait op `http://localhost:3000` (of de `PORT` in je `.env`).
 
-```bash
-# 1) Installeren
-npm install
+> Let op: `server.js` maakt zelf de SQLite-tabellen aan als ze nog niet bestaan. Commit de `data.db` **niet** verder; die is genegeerd in `.gitignore`.
 
-# 2) Zet je env-variabelen
-cp .env.example .env
-# Pas de waarden aan in .env (sterk wachtwoord, enz.)
+## Klaarmaken voor GitHub
 
-# 3) Runnen
-npm start
-# App draait op http://localhost:3000
-```
-
-De database wordt standaard opgeslagen in `./.data/data.db` (wordt automatisch aangemaakt).
-
-## Deploy naar GitHub
-
-1. Maak een nieuwe lege GitHub-repo.
-2. Voeg deze code toe als Git-repo en push:
+1. Maak een nieuwe GitHub-repo (privé of publiek).
+2. Koppel en push:
    ```bash
    git init
    git add .
-   git commit -m "Initial commit"
+   git commit -m "Initial commit: Website_ready_v2"
    git branch -M main
-   git remote add origin https://github.com/<jouw-naam>/<jouw-repo>.git
+   git remote add origin <jouw-repo-url>
    git push -u origin main
    ```
 
-## Deploy naar Render
+## Deployen op Render
 
-Deze repo bevat een `render.yaml` voor één-klik deploy via **Render Blueprints**.
+We leveren een `render.yaml` mee zodat Render de service automatisch kan aanmaken.
+
+### Data-persistentie
+De app gebruikt SQLite (`data.db`). Op Render is het filesystem **niet persistent**; daarom mounten we een **Disk** op `/data` en linken die naar `./data.db` zodat je data blijft bestaan tussen deploys.
 
 ### Stappen
+
 1. Push deze code naar GitHub.
-2. Ga naar Render → **New** → **Blueprint** en kies je GitHub-repo.
-3. Vul de **Environment Variables** in op basis van `.env.example`.
-4. Render maakt een **Web Service** aan met:
-   - Build: `npm install`
-   - Start: `npm start`
-   - Persistent Disk op `/.data` (gemount op `/opt/render/project/src/.data`) voor SQLite.
+2. Ga naar [Render](https://render.com), kies **New +** → **Blueprint** en selecteer je repo (met `render.yaml`).
+3. Controleer de service-instellingen en klik **Apply**.
 
-> **Let op:** `/.data` staat in `.gitignore` en komt **niet** mee in GitHub. Render maakt deze map aan op de schijf.
+### Omgevingsvariabelen
+Als `server.js` environment variables verwacht, stel die in onder **Environment** → **Environment Variables** (Render dashboard). Gedetecteerd in de code: `ADMIN_PASSWORD, ADMIN_USERNAME, NODE_ENV, PORT, SESSION_SECRET`.
 
-### Vereiste variabelen
-- `SESSION_SECRET` — sterk geheim voor sessies
-- `ADMIN_USERNAME` — admin-login
-- `ADMIN_PASSWORD` — admin-wachtwoord
-- `NODE_ENV=production`
+---
 
-### Poort
-Render levert de poort via `PORT`. De app gebruikt automatisch `process.env.PORT || 3000`.
+## Structuur
 
-## Mappenstructuur
+```
+Website_ready_v2/
+├── index.html
+├── style.css
+├── script.js
+├── admin.html
+├── settings.html
+├── reset-password.html
+├── statistieken.html
+├── server.js
+├── package.json
+└── data.db   # genegeerd door .gitignore (gebruik Render Disk)
+```
 
-- `server.js` — Express server + API + auth + SQLite
-- `index.html`, `statistieken.html`, `style.css`, assets — front-end
-- `.env.example` — voorbeeld van benodigde variabelen
-- `/.data/` — **niet in Git**; bevat `data.db` op productie (Render) en lokaal
+## Veelvoorkomende issues
 
-## Veiligheid
-- Gebruik altijd een **sterk** `SESSION_SECRET` in productie.
-- Houd `.env` uit Git (staat in `.gitignore`).
-- Gebruik Render **Environment Variables** i.p.v. een `.env`-bestand op productie.
-
-## Licentie
-Kies zelf een licentie (bijv. MIT) en voeg `LICENSE` toe indien gewenst.
-
-
-### Database op Render (test-only)
-- Op Render gebruikt de app **in-memory SQLite** (`:memory:`). Er wordt **geen** data bewaard tussen deploys/restarts.
-- Lokaal blijft SQLite schrijven naar `./.data/data.db` (staat in `.gitignore`).
+- **Port binding**: Render verwacht dat je luistert op `process.env.PORT`. In `server.js` is dit al zo.
+- **CORS**: Zet eventueel `CORS_ORIGIN` (of pas de CORS-config aan in `server.js`). 
+- **Email/Nodemailer**: Als je mail verstuurt, zet SMTP-waardes via environment variables.
