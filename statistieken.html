@@ -7,7 +7,7 @@
     <!-- Tailwind CSS CDN for easy styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        //* Custom font for a clean look */
+        /* Custom font for a clean look */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* Lichtgrijze achtergrond */
@@ -18,7 +18,7 @@
             max-width: 100%;
             height: auto;
         }
-        //* Tooltip styling */
+        /* Tooltip styling */
         #tooltip {
             position: absolute;
             background-color: rgba(31, 41, 55, 0.9); /* Tailwind gray-800 met opaciteit */
@@ -32,7 +32,7 @@
             transition: opacity 0.2s;
             z-index: 50; /* z-50 */
         }
-        //* Modal overlay styling */
+        /* Modal overlay styling */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -95,7 +95,7 @@
     <script>
         // Definieer API_URL - BELANGRIJK: Voor productie moet dit een veilige, niet-localhost URL zijn.
         // In een Canvas-omgeving kan dit dynamisch worden geleverd.
-        const API_URL = '/api'; // Gecorrigeerde API URL
+        const API_URL = (window.API_URL || '/api').replace(/\/$/, ''); // Gecorrigeerde API URL
         let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 
         // Globale variabele voor het aantal donderdagen tot vandaag, gedeeld door meerdere functies
@@ -141,7 +141,7 @@
             '#16A085'  // Donkerder zeegroen
         ];
 
-        //**
+        /**
          * Toont een foutmelding op de UI.
          * @param {HTMLElement} element - Het HTML-element om het bericht in weer te geven.
          * @param {string} message - Het foutbericht om weer te geven.
@@ -151,7 +151,7 @@
             console.error("Foutmelding weergegeven:", message);
         }
 
-        //**
+        /**
          * Berekent het aantal donderdagen vanaf 1 januari 2025 tot de huidige datum (inclusief).
          * @returns {number} Het totale aantal donderdagen.
          */
@@ -176,7 +176,7 @@
             return count;
         }
 
-        //**
+        /**
          * Berekent het aantal resterende donderdagen in het jaar 2025 vanaf de huidige datum (exclusief).
          * @returns {number} Het aantal resterende donderdagen.
          */
@@ -206,7 +206,7 @@
             return count;
         }
 
-        //**
+        /**
          * Berekent het totale aantal donderdagen in een bepaald jaar.
          * @param {number} year - Het jaar waarvoor donderdagen moeten worden berekend.
          * @returns {number} Het totale aantal donderdagen in het jaar.
@@ -229,7 +229,7 @@
             return count;
         }
 
-        //**
+        /**
          * Haalt aanwezigheidsgegevens op voor alle gebruikers.
          * @returns {Promise<Array<{user: string, count: number}>>} Een promise die resulteert in een array met aanwezigheidsgegevens.
          */
@@ -249,7 +249,7 @@
             }
         }
 
-        //**
+        /**
          * Haalt de specifieke aanwezigheidsdata (dagen) op voor een gebruiker.
          * @param {string} user - De naam van de gebruiker.
          * @returns {Promise<Array<string>>} Een promise die resulteert in een array van datums.
@@ -275,7 +275,7 @@
             }
         }
         
-        //**
+        /**
          * Haalt de specifieke hostdata (dagen) op voor een gebruiker.
          * @param {string} user - De naam van de gebruiker.
          * @returns {Promise<Array<string>>} Een promise die resulteert in een array van datums.
@@ -298,7 +298,7 @@
             }
         }
 
-        //**
+        /**
          * Haalt hostgegevens op voor alle gebruikers.
          * @returns {Promise<Array<{user: string, count: number}>>} Een promise die resulteert in een array met hostgegevens.
          */
@@ -318,7 +318,7 @@
             }
         }
 
-        //**
+        /**
          * Tekent een cirkeldiagram op een canvas.
          * @param {string} canvasId - De ID van het canvas-element.
          * @param {Array<{user: string, count: number}>} data - De gegevens om te plotten.
@@ -338,8 +338,8 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const total = data.reduce((sum, item) => sum + item.count, 0);
-            const centerX = canvas.width // 2;
-            const centerY = canvas.height // 2;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
             const radius = Math.min(centerX, centerY) * 0.8; // 80% van de kleinste dimensie
 
             let currentAngle = 0;
@@ -355,7 +355,7 @@
             }
 
             data.forEach((item, index) => {
-                const sliceAngle = (item.count // total) * 2 * Math.PI;
+                const sliceAngle = (item.count / total) * 2 * Math.PI;
                 // Gebruik kleuren uit het voorgedefinieerde palet
                 const color = colorPalette[index % colorPalette.length]; 
                 
@@ -378,7 +378,7 @@
 
                 if (chartType === 'attendance') {
                     // Gebruik de totale basis voor de percentageberekening
-                    percentageForSlice = totalThursdaysBasis > 0 ? ((item.count // totalThursdaysBasis) * 100).toFixed(1) : 0;
+                    percentageForSlice = totalThursdaysBasis > 0 ? ((item.count / totalThursdaysBasis) * 100).toFixed(1) : 0;
                     
                     // Toon het juiste percentage en aantal, inclusief voor 'Overige'
                     if (item.user === 'Overige') {
@@ -447,7 +447,7 @@
             return slices; // Retourneer de slice-gegevens
         }
 
-        //**
+        /**
          * Verwerkt de opgehaalde datums en toont de modal.
          * @param {string} user - De naam van de gebruiker.
          * @param {Array<string>} dates - De array met datums (ISO-formaat).
@@ -460,7 +460,7 @@
             today.setHours(0, 0, 0, 0);
             const filteredDates = dates.filter(dateStr => new Date(dateStr) <= today);
 
-            const percentage = totalThursdays > 0 ? ((attendanceCount // totalThursdays) * 100).toFixed(1) : 0;
+            const percentage = totalThursdays > 0 ? ((attendanceCount / totalThursdays) * 100).toFixed(1) : 0;
             modalTitle.textContent = `Aanwezigheid ${user} (${percentage}%)`;
             attendanceDatesList.innerHTML = ''; // Leeg de lijst
 
@@ -486,7 +486,7 @@
             attendanceModalOverlay.classList.remove('hidden');
         }
 
-        //**
+        /**
          * Verwerkt de opgehaalde datums en toont de modal voor hosts.
          * @param {string} user - De naam van de gebruiker.
          * @param {Array<string>} dates - De array met datums (ISO-formaat).
@@ -522,14 +522,14 @@
             attendanceModalOverlay.classList.remove('hidden');
         }
 
-        //**
+        /**
          * Toont een modal met de individuele aanwezigen en hun datums voor de "Overige" categorie.
          * @param {Array<{user: string, count: number}>} otherUsers - Array van gebruikers die in de categorie "Overige" vallen.
          * @param {number} totalThursdays - Het totale aantal donderdagen tot vandaag.
          */
         async function displayOtherAttendeesModal(otherUsers, totalThursdays) {
             const totalOtherCount = otherUsers.reduce((sum, user) => sum + user.count, 0);
-            const totalOtherPercentage = totalThursdays > 0 ? ((totalOtherCount // totalThursdays) * 100).toFixed(1) : 0;
+            const totalOtherPercentage = totalThursdays > 0 ? ((totalOtherCount / totalThursdays) * 100).toFixed(1) : 0;
 
             modalTitle.textContent = `Aanwezigheid overige (${totalOtherPercentage}%)`;
             attendanceDatesList.innerHTML = '<li>Laden...</li>';
@@ -541,7 +541,7 @@
             if (otherUsers.length > 0) {
                 for (const user of otherUsers) {
                     const userDates = await fetchUserAttendanceDates(user.user);
-                    const userPercentage = totalThursdays > 0 ? ((user.count // totalThursdays) * 100).toFixed(1) : 0;
+                    const userPercentage = totalThursdays > 0 ? ((user.count / totalThursdays) * 100).toFixed(1) : 0;
                     
                     const userItemDiv = document.createElement('div');
                     const userHeader = document.createElement('p');
@@ -586,7 +586,7 @@
             attendanceDatesList.appendChild(allAttendeesContainer);
         }
 
-        //**
+        /**
          * Hulpfunctie om de muispositie ten opzichte van het canvas te krijgen.
          * @param {HTMLCanvasElement} canvas - Het canvas-element.
          * @param {MouseEvent} evt - De muisgebeurtenis.
@@ -600,7 +600,7 @@
             };
         }
 
-        //**
+        /**
          * Verwerkt muisbewegingen over een cirkeldiagramcanvas om tooltips weer te geven.
          * @param {MouseEvent} event - De muisgebeurtenis.
          * @param {HTMLCanvasElement} canvas - Het canvas-element.
@@ -609,8 +609,8 @@
          */
         function handlePieChartMouseMove(event, canvas, slices, tooltipElement) {
             const mousePos = getMousePos(canvas, event);
-            const centerX = canvas.width // 2;
-            const centerY = canvas.height // 2;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
             const dx = mousePos.x - centerX;
             const dy = mousePos.y - centerY;
             const distance = Math.sqrt(dx * dx + dy * dy);
@@ -653,7 +653,7 @@
             }
         }
 
-        //**
+        /**
          * Verwerkt de mouse out-gebeurtenis voor het cirkeldiagramcanvas om de tooltip te verbergen.
          * @param {HTMLElement} tooltipElement - Het HTML-element van de tooltip.
          */
@@ -662,7 +662,7 @@
         }
 
 
-        //**
+        /**
          * Laadt alle statistieken, haalt gegevens op en werkt de weergave-elementen op de pagina bij.
          */
         async function loadStatistics() {

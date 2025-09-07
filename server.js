@@ -71,7 +71,7 @@ db.serialize(() => {
         is_blocked INTEGER DEFAULT 0 NOT NULL
     )`);
 
-    // Add last_login // reset / is_blocked kolommen als ze ontbreken
+    // Add last_login / reset / is_blocked kolommen als ze ontbreken
     db.all("PRAGMA table_info(users)", (err, columns) => {
         if (err) {
             console.error("Error checking users table info:", err);
@@ -295,7 +295,7 @@ app.post('/api/register', async (req, res) => {
                 }
 
                 // Stuur welkomstmail
-                const loginUrl = '/index.html';
+                const loginUrl = 'http://localhost:5500/index.html';
                 const welcomeMail = {
                     from: 'Donderdagborrel <no-reply@donderdagborrel.nl>',
                     to: email,
@@ -768,7 +768,7 @@ app.post('/api/forgot-password', (req, res) => {
                     return res.status(500).json({ message: 'Fout bij het genereren van de resetlink.' });
                 }
 
-                const resetLink = `/reset-password.html?token=${token}`;
+                const resetLink = `http://localhost:5500/reset-password.html?token=${token}`;
                 const mailOptions = {
                     from: 'Donderdagborrel <no-reply@donderdagborrel.nl>',
                     to: user.email,
@@ -818,7 +818,7 @@ app.post('/api/reset-password', async (req, res) => {
                     }
 
                     // Verstuur bevestigingsmail (informeel + Inter)
-                    const loginUrl = '/index.html';
+                    const loginUrl = 'http://localhost:5500/index.html';
                     const confirmMail = {
                         from: 'Donderdagborrel <no-reply@donderdagborrel.nl>',
                         to: user.email,

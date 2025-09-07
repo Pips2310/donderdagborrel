@@ -1,38 +1,38 @@
-require('dotenv').config(); / Load environment variables from .env file
+require('dotenv').config(); // Load environment variables from .env file
 
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
-const bcrypt = require('bcrypt'); / Import bcrypt
-const nodemailer = require('nodemailer'); / Import nodemailer
+const bcrypt = require('bcrypt'); // Import bcrypt
+const nodemailer = require('nodemailer'); // Import nodemailer
 
 const app = express();
 const port = 3000;
 
-/ Middleware
+// Middleware
 app.use(cors({
-    / Alle origins toestaan voor ontwikkelingsdoeleinden (NIET voor productie!)
-    origin: ['http://localhost:5500', 'http://192.168.178.150:5500'], / Nu inclusief je specifieke IP-adres
-    credentials: true / Crucial for sending cookies (sessions)
+    // Alle origins toestaan voor ontwikkelingsdoeleinden (NIET voor productie!)
+    origin: ['http://localhost:5500', 'http://192.168.178.150:5500'], // Nu inclusief je specifieke IP-adres
+    credentials: true // Crucial for sending cookies (sessions)
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-/ Sessie-configuratie
+// Sessie-configuratie
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'fallback_secret_for_dev_ONLY', / Use environment variable!
+    secret: process.env.SESSION_SECRET || 'fallback_secret_for_dev_ONLY', // Use environment variable!
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, / Zet dit op 'false' voor lokale HTTP-verbindingen
-        httpOnly: true, / Prevents client-side JS from accessing the cookie
+        secure: false, // Zet dit op 'false' voor lokale HTTP-verbindingen
+        httpOnly: true, // Prevents client-side JS from accessing the cookie
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 / 24 hours
+        maxAge: 1000 * 60 * 60 * 24 // 24 hours
     }
 }));
 
-/ Database initialiseren
+// Database initialiseren
 const db = new sqlite3.Database('./data.db', (err) => {
     if (err) {
         console.error('Error connecting to database:', err.message);
@@ -42,7 +42,7 @@ const db = new sqlite3.Database('./data.db', (err) => {
 });
 
 db.serialize(() => {
-    / Aanwezigheid table with UNIQUE constraint
+    // Aanwezigheid table with UNIQUE constraint
     db.run(`CREATE TABLE IF NOT EXISTS aanwezigheid (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         gebruikersnaam TEXT NOT NULL,
@@ -66,7 +66,7 @@ db.serialize(() => {
         reset_token_expires TEXT DEFAULT NULL
     )`);
 
-    / Add last_login column if it doesn't exist
+    // Add last_login column if it doesn't exist
     db.all("PRAGMA table_info(users)", (err, columns) => {
         if (err) {
             console.error("Error checking users table info:", err);
@@ -82,7 +82,7 @@ db.serialize(() => {
                 }
             });
         }
-        / Add reset_token and reset_token_expires columns if they don't exist
+        // Add reset_token and reset_token_expires columns if they don't exist
         const hasResetToken = columns.some(col => col.name === 'reset_token');
         const hasResetTokenExpires = columns.some(col => col.name === 'reset_token_expires');
 
@@ -106,9 +106,9 @@ db.serialize(() => {
         }
     });
 
-    / OPTIONEEL: Voeg een admin gebruiker toe als deze nog niet bestaat
+    // OPTIONEEL: Voeg een admin gebruiker toe als deze nog niet bestaat
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'default_admin_password'; / Change in .env!
+    const adminPassword = process.env.ADMIN_PASSWORD || 'default_admin_password'; // Change in .env!
     const saltRounds = 10;
 
     db.get("SELECT * FROM users WHERE username = ?", [adminUsername], (err, row) => {
@@ -139,20 +139,20 @@ db.serialize(() => {
     });
 });
 
-/ Nodemailer transporter configuratie voor MailHog
+// Nodemailer transporter configuratie voor MailHog
 const transporter = nodemailer.createTransport({
     host: "localhost",
-    port: 1025, / MailHog's SMTP poort
-    secure: false, / MailHog gebruikt geen TLS/SSL standaard
-    ignoreTLS: true, / Negeer TLS-fouten
+    port: 1025, // MailHog's SMTP poort
+    secure: false, // MailHog gebruikt geen TLS/SSL standaard
+    ignoreTLS: true, // Negeer TLS-fouten
 });
 
-/ Functie om een willekeurige token te genereren
+// Functie om een willekeurige token te genereren
 function generateToken() {
     return require('crypto').randomBytes(20).toString('hex');
 }
 
-/ --- Register endpoint ---
+// --- Register endpoint ---
 app.post('/api/register', (req, res) => {
     const { username, email, password } = req.body;
 
@@ -193,7 +193,7 @@ app.post('/api/register', (req, res) => {
     });
 });
 
-/ --- Login endpoint ---
+// --- Login endpoint ---
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -215,11 +215,11 @@ app.post('/api/login', (req, res) => {
                 console.error('Bcrypt error during password comparison:', err);
                 return res.status(500).json({ message: 'Inloggen mislukt door een interne serverfout.' });
             }
-            if (!result) { / Wachtwoord komt niet overeen
+            if (!result) { // Wachtwoord komt niet overeen
                 return res.status(401).json({ message: 'Ongeldige gebruikersnaam of wachtwoord.' });
             }
 
-            / Update last_login timestamp
+            // Update last_login timestamp
             const now = new Date().toISOString();
             db.run(`UPDATE users SET last_login = ? WHERE id = ?`, [now, user.id], (updateErr) => {
                 if (updateErr) {
@@ -227,7 +227,7 @@ app.post('/api/login', (req, res) => {
                 }
             });
 
-            / Inloggen succesvol: sessievariabelen instellen
+            // Inloggen succesvol: sessievariabelen instellen
             req.session.userId = user.id;
             req.session.username = user.username;
             req.session.role = user.role;
@@ -243,33 +243,33 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-/ --- Logout endpoint ---
-app.post('/api/logout', (req, res) => { / Changed to POST for consistency, safer than GET
+// --- Logout endpoint ---
+app.post('/api/logout', (req, res) => { // Changed to POST for consistency, safer than GET
     req.session.destroy(err => {
         if (err) {
             console.error('Error destroying session:', err);
             return res.status(500).json({ message: 'Fout bij uitloggen.' });
         }
-        res.clearCookie('connect.sid'); / Clear the session cookie from the client
+        res.clearCookie('connect.sid'); // Clear the session cookie from the client
         res.status(200).json({ message: 'Succesvol uitgelogd.' });
     });
 });
 
-/ Middleware for authorization
+// Middleware for authorization
 function isAdmin(req, res, next) {
     if (!req.session || !req.session.userId) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
     }
     if (req.session.role === 'admin') {
-        next(); / User is admin, proceed
+        next(); // User is admin, proceed
     } else {
         return res.status(403).json({ message: 'Toegang geweigerd: Onvoldoende rechten.' });
     }
 }
 
-/ --- API endpoints ---
+// --- API endpoints ---
 
-/ Aanwezigheid registreren (now allows admin to add for others)
+// Aanwezigheid registreren (now allows admin to add for others)
 app.post('/api/aanwezigheid', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn om aanwezigheid te registreren.' });
@@ -281,7 +281,7 @@ app.post('/api/aanwezigheid', (req, res) => {
         return res.status(400).json({ message: 'Gebruikersnaam en datum zijn verplicht.' });
     }
 
-    / Allow admin to modify attendance for any user, otherwise restrict to self
+    // Allow admin to modify attendance for any user, otherwise restrict to self
     if (req.session.role !== 'admin' && gebruikersnaam !== req.session.username) {
         return res.status(403).json({ message: 'Niet toegestaan om aanwezigheid voor een andere gebruiker te wijzigen.' });
     }
@@ -302,7 +302,7 @@ app.post('/api/aanwezigheid', (req, res) => {
     );
 });
 
-/ Aanwezigheid verwijderen (now allows admin to delete for others)
+// Aanwezigheid verwijderen (now allows admin to delete for others)
 app.delete('/api/aanwezigheid', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn om aanwezigheid te verwijderen.' });
@@ -314,7 +314,7 @@ app.delete('/api/aanwezigheid', (req, res) => {
         return res.status(400).json({ message: 'Gebruikersnaam en datum zijn verplicht.' });
     }
 
-    / Allow admin to modify attendance for any user, otherwise restrict to self
+    // Allow admin to modify attendance for any user, otherwise restrict to self
     if (req.session.role !== 'admin' && gebruikersnaam !== req.session.username) {
         return res.status(403).json({ message: 'Niet toegestaan om aanwezigheid voor een andere gebruiker te wijzigen.' });
     }
@@ -335,7 +335,7 @@ app.delete('/api/aanwezigheid', (req, res) => {
     );
 });
 
-/ Aanwezigen per datum ophalen
+// Aanwezigen per datum ophalen
 app.get('/api/aanwezigheid/datum/:datum', (req, res) => {
     const { datum } = req.params;
     db.all(
@@ -352,12 +352,12 @@ app.get('/api/aanwezigheid/datum/:datum', (req, res) => {
     );
 });
 
-/ Alle datums ophalen waarop een gebruiker aanwezig was
+// Alle datums ophalen waarop een gebruiker aanwezig was
 app.get('/api/aanwezigheid/gebruiker/:gebruikersnaam', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
     }
-    / Only allow user to fetch their own attendance, unless admin
+    // Only allow user to fetch their own attendance, unless admin
     if (req.session.username !== req.params.gebruikersnaam && req.session.role !== 'admin') {
         return res.status(403).json({ message: 'Niet toegestaan om aanwezigheid van een andere gebruiker op te halen.' });
     }
@@ -377,7 +377,7 @@ app.get('/api/aanwezigheid/gebruiker/:gebruikersnaam', (req, res) => {
     );
 });
 
-/ Host per datum ophalen
+// Host per datum ophalen
 app.get('/api/host/:datum', (req, res) => {
     const { datum } = req.params;
     db.get(`SELECT host FROM hosts WHERE datum = ?`, [datum], (err, row) => {
@@ -389,12 +389,12 @@ app.get('/api/host/:datum', (req, res) => {
     });
 });
 
-/ NEW: Endpoint to get all dates a specific user has hosted
+// NEW: Endpoint to get all dates a specific user has hosted
 app.get('/api/hosts/gebruiker/:gebruikersnaam', (req, res) => {
     if (!req.session || !req.session.username) {
         return res.status(401).json({ message: 'Niet geautoriseerd: U moet ingelogd zijn.' });
     }
-    / Only allow user to fetch their own hosting data, unless admin
+    // Only allow user to fetch their own hosting data, unless admin
     if (req.session.username !== req.params.gebruikersnaam && req.session.role !== 'admin') {
         return res.status(403).json({ message: 'Niet toegestaan om hostingdata van een andere gebruiker op te halen.' });
     }
@@ -415,7 +415,7 @@ app.get('/api/hosts/gebruiker/:gebruikersnaam', (req, res) => {
 });
 
 
-/ Host opslaan/updaten (ALLEEN ADMIN)
+// Host opslaan/updaten (ALLEEN ADMIN)
 app.post('/api/host/:datum', isAdmin, (req, res) => {
     const { datum } = req.params;
     const { host } = req.body;
@@ -438,7 +438,7 @@ app.post('/api/host/:datum', isAdmin, (req, res) => {
                 return res.status(500).json({ message: 'Fout bij opslaan host.' });
             }
 
-            / Ensure the new host is also marked as present for that date
+            // Ensure the new host is also marked as present for that date
             db.run(
                 `INSERT INTO aanwezigheid (gebruikersnaam, datum) VALUES (?, ?)
                  ON CONFLICT(gebruikersnaam, datum) DO NOTHING`,
@@ -454,7 +454,7 @@ app.post('/api/host/:datum', isAdmin, (req, res) => {
     );
 });
 
-/ Get all registered users (ADMIN ONLY) - Existing endpoint, but we need a public one for stats
+// Get all registered users (ADMIN ONLY) - Existing endpoint, but we need a public one for stats
 app.get('/api/users', isAdmin, (req, res) => {
     db.all(`SELECT username, email, last_login, role FROM users`, (err, rows) => {
         if (err) {
@@ -465,9 +465,9 @@ app.get('/api/users', isAdmin, (req, res) => {
     });
 });
 
-/ Endpoint to get a list of all unique users (for statistics)
+// Endpoint to get a list of all unique users (for statistics)
 app.get('/api/users/list', (req, res) => {
-    / Combine usernames from 'users', 'aanwezigheid', and 'hosts' tables
+    // Combine usernames from 'users', 'aanwezigheid', and 'hosts' tables
     const sql = `
         SELECT username AS user FROM users
         UNION
@@ -481,19 +481,19 @@ app.get('/api/users/list', (req, res) => {
             console.error('Error fetching list of unique users for statistics:', err);
             return res.status(500).json({ message: 'Fout bij ophalen gebruikerslijst voor statistieken.' });
         }
-        const usernames = rows.map(row => row.user); / Map 'user' alias
-        console.log('Backend: All unique users for statistics:', usernames); / Debug log
+        const usernames = rows.map(row => row.user); // Map 'user' alias
+        console.log('Backend: All unique users for statistics:', usernames); // Debug log
         res.json(usernames);
     });
 });
 
 
-/ Endpoint to get attendance summary for all users (for statistics)
+// Endpoint to get attendance summary for all users (for statistics)
 app.get('/api/attendance/summary', (req, res) => {
     const startOfYear = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
 
-    console.log(`Backend: Fetching attendance summary for dates between ${startOfYear} and ${today}`); / Added log
+    console.log(`Backend: Fetching attendance summary for dates between ${startOfYear} and ${today}`); // Added log
     const sql = `SELECT gebruikersnaam AS user, COUNT(*) AS count
                  FROM aanwezigheid
                  WHERE datum >= ? AND datum <= ?
@@ -507,18 +507,18 @@ app.get('/api/attendance/summary', (req, res) => {
                 console.error('Error fetching attendance summary:', err);
                 return res.status(500).json({ message: 'Fout bij ophalen aanwezigheidsstatistieken.' });
             }
-            console.log('Backend: Attendance summary rows:', rows); / Added log
+            console.log('Backend: Attendance summary rows:', rows); // Added log
             res.json(rows);
         }
     );
 });
 
-/ Endpoint to get host summary for all users (for statistics)
+// Endpoint to get host summary for all users (for statistics)
 app.get('/api/hosts/summary', (req, res) => {
     const startOfYear = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1)).toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
 
-    console.log(`Backend: Fetching hosts summary for dates between ${startOfYear} and ${today}`); / Added log
+    console.log(`Backend: Fetching hosts summary for dates between ${startOfYear} and ${today}`); // Added log
     const sql = `SELECT host AS user, COUNT(*) AS count
                  FROM hosts
                  WHERE datum >= ? AND datum <= ?
@@ -532,13 +532,13 @@ app.get('/api/hosts/summary', (req, res) => {
                 console.error('Error fetching hosts summary:', err);
                 return res.status(500).json({ message: 'Fout bij ophalen hostingstatistieken.' });
             }
-            console.log('Backend: Hosts summary rows:', rows); / Added log
+            console.log('Backend: Hosts summary rows:', rows); // Added log
             res.json(rows);
         }
     );
 });
 
-/ NEW: Wachtwoord vergeten aanvraag
+// NEW: Wachtwoord vergeten aanvraag
 app.post('/api/forgot-password', (req, res) => {
     const { email } = req.body;
 
@@ -552,12 +552,12 @@ app.post('/api/forgot-password', (req, res) => {
             return res.status(500).json({ message: 'Er is een interne serverfout opgetreden.' });
         }
         if (!user) {
-            / Stuur altijd een succesbericht, zelfs als de e-mail niet bestaat, om user enumeration te voorkomen
+            // Stuur altijd een succesbericht, zelfs als de e-mail niet bestaat, om user enumeration te voorkomen
             return res.status(200).json({ message: 'Als het e-mailadres bekend is, is er een link voor het opnieuw instellen van het wachtwoord verzonden.' });
         }
 
         const token = generateToken();
-        const expires = Date.now() + 3600000; / Token is 1 uur geldig
+        const expires = Date.now() + 3600000; // Token is 1 uur geldig
 
         db.run(`UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?`, [token, expires, user.id], (updateErr) => {
             if (updateErr) {
@@ -565,7 +565,7 @@ app.post('/api/forgot-password', (req, res) => {
                 return res.status(500).json({ message: 'Fout bij het genereren van de resetlink.' });
             }
 
-            const resetLink = `/reset-password.html?token=${token}`; / Pas dit aan naar je frontend URL
+            const resetLink = `http://localhost:5500/reset-password.html?token=${token}`; // Pas dit aan naar je frontend URL
             const mailOptions = {
                 from: 'no-reply@donderdagen2025.com',
                 to: user.email,
@@ -593,7 +593,7 @@ app.post('/api/forgot-password', (req, res) => {
     });
 });
 
-/ NEW: Wachtwoord opnieuw instellen endpoint
+// NEW: Wachtwoord opnieuw instellen endpoint
 app.post('/api/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
 

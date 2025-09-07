@@ -8,12 +8,12 @@
 // v1.4 2025-08-27 — voorstel B (accent-ring + puls)
 // v1.3 2025-02-25 — geschiedenis: transparante panel-bg
 // v1.2 2025-02-25 — kroon in geschiedenis
-const API_URL = '/api';
+const API_URL = (window.API_URL || '/api').replace(/\/$/, '');
 let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 let userRole = localStorage.getItem('userRole') || '';
 let resolveModalPromise; // Used for showConfirm modal
 
-//** Inline attendees with "+X meer" and modal for full list */
+/** Inline attendees with "+X meer" and modal for full list */
 function renderAttendeesInline(containerEl, names, opts = {}) {
   const MAX_INLINE = opts.maxInline ?? 6; // show up to 6 inline
   if (!containerEl) return;
@@ -50,7 +50,7 @@ function renderAttendeesInline(containerEl, names, opts = {}) {
   }
 }
 
-//** Render names-only for attendee panel with a single “+X meer” button (no duplicate) */
+/** Render names-only for attendee panel with a single “+X meer” button (no duplicate) */
 function renderAttendeePanelNames(targetEl, names, opts = {}) {
   if (!targetEl) return;
   targetEl.innerHTML = '';
@@ -155,7 +155,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
 }
 
 
-//** Dedicated modal to show full attendee list with proper HTML layout */
+/** Dedicated modal to show full attendee list with proper HTML layout */
 function showAttendeesModal(names) {
   const modal = document.getElementById('customModal');
   const titleEl = document.getElementById('modalTitle');
@@ -251,7 +251,7 @@ function login() {
 
 
 
-//** Register */
+/** Register */
 function registerUser() {
     const username = document.getElementById("regUsername").value.trim();
     const email = document.getElementById("regEmail").value.trim();
@@ -276,7 +276,7 @@ function registerUser() {
 }
 
 
-//** Logout */
+/** Logout */
 function logout() {
     localStorage.removeItem('gebruikersnaam');
     localStorage.removeItem('userRole');
@@ -286,7 +286,7 @@ function logout() {
     window.location.href = 'index.html';
 }
 
-//** App tonen */
+/** App tonen */
 async function toonApp() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
@@ -307,7 +307,7 @@ async function toonApp() {
     }
 }
 
-//** Donderdagen 2025 */
+/** Donderdagen 2025 */
 function alleDonderdagen() {
     const data = [];
     let datum = new Date(Date.UTC(2025, 0, 2));
@@ -319,7 +319,7 @@ function alleDonderdagen() {
     return data;
 }
 
-//** API helpers */
+/** API helpers */
 async function fetchHost(datum) {
     try {
         const res = await fetch(`${API_URL}/host/${datum}`, { credentials: 'include' });
@@ -405,7 +405,7 @@ async function removeHost(datum) {
     } catch { showModal('Fout','Algemene fout bij host verwijderen.'); return false; }
 }
 
-//** Accordeon-item */
+/** Accordeon-item */
 async function createAccordionItem(datum, isVerleden) {
     const acc = document.createElement('div');
     acc.dataset.datum = datum;
@@ -794,7 +794,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
 
                 // Live drag: offset = startOffset + delta
-                let newOffset = startOffset + (diffX // acc.offsetWidth) * 100;
+                let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
@@ -808,7 +808,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                     let progress = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
-                        progress = Math.min(1, Math.max(0, (-diffX) // denom));
+                        progress = Math.min(1, Math.max(0, (-diffX) / denom));
                     }
                     if (cal) {
                         cal.style.opacity = String(1 - progress);
@@ -832,8 +832,8 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 if (!isSwiping) return;
                 isSwiping = false;
                 const deltaX = currentX - startX;
-                const goLeft  = deltaX > thresholdPx(); // vinger naar rechts -> naar attendees
-                const goRight = deltaX < -thresholdPx(); // vinger naar links  -> terug naar main of host-animatie
+                const goLeft  = deltaX > thresholdPx();   // vinger naar rechts -> naar attendees
+                const goRight = deltaX < -thresholdPx();  // vinger naar links  -> terug naar main of host-animatie
 
                 if (panelIndex === 1 && goLeft) {
                     // Main -> Attendees
@@ -977,7 +977,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 const diffY = e.touches[0].clientY - startY;
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
 
-                let newOffset = startOffset + (diffX // acc.offsetWidth) * 100;
+                let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
@@ -991,7 +991,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                     let progressLeft = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
-                        progressLeft = Math.min(1, Math.max(0, (-diffX) // denom));
+                        progressLeft = Math.min(1, Math.max(0, (-diffX) / denom));
                     }
                     if (cal) {
                         cal.style.opacity = String(1 - progressLeft);
@@ -1027,7 +1027,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
     return acc;
 }
 
-//** Dagen laden */
+/** Dagen laden */
 async function toonDagen() {
     const lijst = document.getElementById('dagenLijst');
     lijst.innerHTML = '<div class="text-center text-gray-500 py-4"><div class="loader mx-auto"></div> Laden donderdagen...</div>';
@@ -1154,7 +1154,7 @@ _histReachedStart = _histNextEnd <= 0;
 
 }
 
-//** User menu */
+/** User menu */
 function setupUserMenu() {
     const userIcon = document.getElementById('userIcon');
     const dropdown = document.getElementById('dropdownMenu');
@@ -1183,7 +1183,7 @@ function setupUserMenu() {
     });
 }
 
-//** Modals */
+/** Modals */
 const registrationModal = document.getElementById("registrationModal");
 const forgotPasswordModal = document.getElementById("forgotPasswordModal");
 
@@ -1275,7 +1275,8 @@ async function requestPasswordReset() {
         
         const data = await response.json();
 
-        // De API geeft altijd een succesvol bericht terug, ongeacht of het e-mailadres bestaat, // om gebruikersnamen niet te lekken. We tonen altijd hetzelfde succesbericht.
+        // De API geeft altijd een succesvol bericht terug, ongeacht of het e-mailadres bestaat,
+        // om gebruikersnamen niet te lekken. We tonen altijd hetzelfde succesbericht.
         showModal('Succes', data.message || 'Als het e-mailadres bekend is, is er een link voor het opnieuw instellen van het wachtwoord verzonden.');
         forgotPasswordModal.classList.add('hidden');
         document.getElementById('forgotPasswordForm').reset();
@@ -1288,7 +1289,7 @@ async function requestPasswordReset() {
 }
 
 
-//** Initial load */
+/** Initial load */
 window.onload = () => {
     gebruikersnaam = localStorage.getItem('gebruikersnaam');
     userRole = localStorage.getItem('userRole');
@@ -1337,7 +1338,7 @@ window.onload = () => {
 };
 
 
-//* === Geschiedenis-accordeon v1.0 === */
+/* === Geschiedenis-accordeon v1.0 === */
 (() => {
   const BTN_ID = 'geschiedenisKnop';
   const BATCH = 4;
@@ -1430,7 +1431,7 @@ window.onload = () => {
   });
 })();
 
-//* ===== Settings page helpers (accordions + suggestions) ===== */
+/* ===== Settings page helpers (accordions + suggestions) ===== */
 (() => {
   // Avoid double-declare
   if (window.__settingsHelpersInit) return;
@@ -1553,7 +1554,7 @@ window.onload = () => {
         return;
       }
 
-      const API_URL = (window.API_URL || '/api').replace(/\/$/, '');
+      const API_URL = (window.API_URL || 'http://localhost:3000/api').replace(/\/$/, '');
       const gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 
       loader.classList.remove('hidden');
@@ -1593,3 +1594,9 @@ window.onload = () => {
     initWhenReady();
   }
 })();
+
+
+// Ensure functions are available on window for inline handlers
+window.login = login;
+window.registerUser = registerUser;
+window.requestPasswordReset = requestPasswordReset;
