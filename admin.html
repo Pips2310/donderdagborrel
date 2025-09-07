@@ -226,7 +226,7 @@
                     throw new Error(err.message || 'Onbekende fout.');
                 }
                 showModal('Succes', `Gebruiker "${username}" is succesvol ${action}d.`);
-                renderAndShowUserList(); / Herlaad de lijst
+                renderAndShowUserList(); // Herlaad de lijst
             } catch (error) {
                 showModal('Fout', `Fout bij ${action} van gebruiker: ${error.message}`);
             }
@@ -330,7 +330,7 @@
                 const newHost = document.getElementById(`editHostInput-${datum}`).value.trim();
                 const success = await zetHost(datum, newHost);
                 if (success) {
-                    await renderThursdayDetailsContent(itemElement, datum); / Re-render this specific item
+                    await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
                 }
             });
             const addAttendeeBtn = document.getElementById(`addAttendeeBtn-${datum}`);
@@ -343,7 +343,7 @@
                 }
                 const success = await voegAanwezigheidToe(datum, newAttendee);
                 if (success) {
-                    await renderThursdayDetailsContent(itemElement, datum); / Re-render this specific item
+                    await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
                     document.getElementById(`addAttendeeInput-${datum}`).value = '';
                 }
             });
@@ -354,7 +354,7 @@
                     if (confirmed) {
                         const success = await verwijderAanwezigheid(button.dataset.date, button.dataset.username);
                         if (success) {
-                            await renderThursdayDetailsContent(itemElement, datum); / Re-render this specific item
+                            await renderThursdayDetailsContent(itemElement, datum); // Re-render this specific item
                         }
                     }
                 });

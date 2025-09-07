@@ -1,13 +1,13 @@
 // versie 1.1 - gefixt
-require('dotenv').config(); / Load environment variables from .env file
+require('dotenv').config(); // Load environment variables from .env file
 
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const session = require('express-session');
-const bcrypt = require('bcrypt'); / Import bcrypt
-const nodemailer = require('nodemailer'); / Import nodemailer
+const bcrypt = require('bcrypt'); // Import bcrypt
+const nodemailer = require('nodemailer'); // Import nodemailer
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,7 +15,7 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors({
     origin: 'http://localhost:5500', // Allow requests from your frontend development server
-    credentials: true / Crucial for sending cookies (sessions)
+    credentials: true // Crucial for sending cookies (sessions)
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -32,7 +32,7 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production', // true in production (HTTPS), false in development (HTTP)
         httpOnly: true, // Prevents client-side JS from accessing the cookie
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 / 24 hours
+        maxAge: 1000 * 60 * 60 * 24 // 24 hours
     }
 }));
 
@@ -71,7 +71,7 @@ db.serialize(() => {
         is_blocked INTEGER DEFAULT 0 NOT NULL
     )`);
 
-    // Add last_login / reset / is_blocked kolommen als ze ontbreken
+    // Add last_login // reset / is_blocked kolommen als ze ontbreken
     db.all("PRAGMA table_info(users)", (err, columns) => {
         if (err) {
             console.error("Error checking users table info:", err);
@@ -109,7 +109,7 @@ db.serialize(() => {
 
     // Optioneel: admin gebruiker
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'default_admin_password'; / Change in .env!
+    const adminPassword = process.env.ADMIN_PASSWORD || 'default_admin_password'; // Change in .env!
     const saltRounds = 10;
 
     db.get("SELECT * FROM users WHERE username = ?", [adminUsername], (err, row) => {
@@ -347,7 +347,7 @@ app.post('/api/login', (req, res) => {
                 console.error('Bcrypt error during password comparison:', err);
                 return res.status(500).json({ message: 'Inloggen mislukt door een interne serverfout.' });
             }
-            if (!result) { / Wachtwoord komt niet overeen
+            if (!result) { // Wachtwoord komt niet overeen
                 return res.status(401).json({ message: 'Ongeldige gebruikersnaam of wachtwoord.' });
             }
 
@@ -382,7 +382,7 @@ app.post('/api/logout', (req, res) => {
             console.error('Error destroying session:', err);
             return res.status(500).json({ message: 'Fout bij uitloggen.' });
         }
-        res.clearCookie('connect.sid'); / Clear the session cookie from the client
+        res.clearCookie('connect.sid'); // Clear the session cookie from the client
         res.status(200).json({ message: 'Succesvol uitgelogd.' });
     });
 });
@@ -758,7 +758,7 @@ app.post('/api/forgot-password', (req, res) => {
         }
 
         const token = generateToken();
-        const expires = Date.now() + 3600000; / 1 uur
+        const expires = Date.now() + 3600000; // 1 uur
 
         db.run(`UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?`,
             [token, expires, user.id],

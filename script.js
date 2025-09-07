@@ -11,13 +11,13 @@
 const API_URL = '/api';
 let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 let userRole = localStorage.getItem('userRole') || '';
-let resolveModalPromise; / Used for showConfirm modal
+let resolveModalPromise; // Used for showConfirm modal
 
 //** Inline attendees with "+X meer" and modal for full list */
 function renderAttendeesInline(containerEl, names, opts = {}) {
-  const MAX_INLINE = opts.maxInline ?? 6; / show up to 6 inline
+  const MAX_INLINE = opts.maxInline ?? 6; // show up to 6 inline
   if (!containerEl) return;
-  containerEl.innerHTML = ''; / reset
+  containerEl.innerHTML = ''; // reset
 
   if (!names || names.length === 0) {
     containerEl.textContent = 'Aanwezigen: Geen';
@@ -62,7 +62,7 @@ function renderAttendeePanelNames(targetEl, names, opts = {}) {
     // ===== MOBILE: 3 rijen × 3 kolommen, laatste cel = +X meer =====
     const rows = opts.rows ?? 3;
     const cols = opts.cols ?? 3;
-    const MAX_CELLS = opts.maxCells ?? (rows * cols); / standaard 9
+    const MAX_CELLS = opts.maxCells ?? (rows * cols); // standaard 9
 
     const list = document.createElement('ul');
     list.className = 'attendee-grid';
@@ -537,9 +537,9 @@ const confirmHost = await showConfirm(
         const setHostButton = hostPanel ? hostPanel.querySelector('#setHostButton') : null;
 
         
-        let currentHostCached = null; / wordt gezet in _updateAccordionItemUI()
+        let currentHostCached = null; // wordt gezet in _updateAccordionItemUI()
 // start op main (index 1)
-        let panelIndex = 1; / 0 attendees, 1 main, 2 host
+        let panelIndex = 1; // 0 attendees, 1 main, 2 host
         const hasHostPanel = false;
 
         function setTransformByIndex(i, withTransition = true) {
@@ -794,7 +794,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
 
                 // Live drag: offset = startOffset + delta
-                let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
+                let newOffset = startOffset + (diffX // acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
@@ -808,7 +808,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                     let progress = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
-                        progress = Math.min(1, Math.max(0, (-diffX) / denom));
+                        progress = Math.min(1, Math.max(0, (-diffX) // denom));
                     }
                     if (cal) {
                         cal.style.opacity = String(1 - progress);
@@ -832,8 +832,8 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 if (!isSwiping) return;
                 isSwiping = false;
                 const deltaX = currentX - startX;
-                const goLeft  = deltaX > thresholdPx();   / vinger naar rechts -> naar attendees
-                const goRight = deltaX < -thresholdPx();  / vinger naar links  -> terug naar main of host-animatie
+                const goLeft  = deltaX > thresholdPx(); // vinger naar rechts -> naar attendees
+                const goRight = deltaX < -thresholdPx(); // vinger naar links  -> terug naar main of host-animatie
 
                 if (panelIndex === 1 && goLeft) {
                     // Main -> Attendees
@@ -847,7 +847,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                     // Binnen main: alleen host-animatie als host onbekend
                     if (currentHostCached === null || currentHostCached === 'Niet bekend') {
                         applySwipeLeftEnterEffects(acc);
-                        panelIndex = 1; / blijf op main
+                        panelIndex = 1; // blijf op main
                     } else {
                         resetSwipeLeftEffects(acc);
                         panelIndex = 1;
@@ -907,7 +907,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
         const dayNameDisplay = mainPanel.querySelector('[data-day-name]');
         const attendeeNamesDisplay = attendeePanel.querySelector('[data-attendee-names-display]');
 
-        let panelIndex = 1; / 0 attendees, 1 main
+        let panelIndex = 1; // 0 attendees, 1 main
         function setTransformByIndex(i, withTransition = true) {
             if (withTransition) panelContainer.style.transition = 'transform 0.38s ease-out';
             else panelContainer.style.transition = 'none';
@@ -936,9 +936,9 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
 
             if (hostNameDisplay) hostNameDisplay.textContent = currentHostNow || 'Niet bekend';
             if (mobileAttendeeCountDisplay) mobileAttendeeCountDisplay.textContent = `Aanwezigen: ${aanwezigen.length === 0 ? 'Geen' : aanwezigen.length}`;
-            if (desktopAttendeeListDisplay) / Desktop: inline + “+X meer”
+            if (desktopAttendeeListDisplay) // Desktop: inline + “+X meer”
 renderAttendeesInline(desktopAttendeeListDisplay, aanwezigen);
-            if (attendeeNamesDisplay) / Aanwezigen-paneel (zonder dubbel label)
+            if (attendeeNamesDisplay) // Aanwezigen-paneel (zonder dubbel label)
 renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
         
             // Toon gedempte kroon in geschiedenis wanneer de ingelogde gebruiker host was
@@ -977,7 +977,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                 const diffY = e.touches[0].clientY - startY;
                 if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) e.preventDefault();
 
-                let newOffset = startOffset + (diffX / acc.offsetWidth) * 100;
+                let newOffset = startOffset + (diffX // acc.offsetWidth) * 100;
                 if (newOffset > maxOffset) newOffset = maxOffset;
                 if (newOffset < minOffset) newOffset = minOffset;
                 panelContainer.style.transform = `translateX(${newOffset}%)`;
@@ -991,7 +991,7 @@ renderAttendeePanelNames(attendeeNamesDisplay, aanwezigen);
                     let progressLeft = 0;
                     if (panelIndex === 1 && diffX < 0) {
                         const denom = Math.max(60, acc.offsetWidth * 0.4);
-                        progressLeft = Math.min(1, Math.max(0, (-diffX) / denom));
+                        progressLeft = Math.min(1, Math.max(0, (-diffX) // denom));
                     }
                     if (cal) {
                         cal.style.opacity = String(1 - progressLeft);
@@ -1062,9 +1062,9 @@ async function toonDagen() {
             
 let _histActief = false;
 let _histReachedStart = false;
-let _histIndex = 0; / (legacy; unused for history batches) / next index into reversed history
+let _histIndex = 0; // (legacy; unused for history batches) // next index into reversed history
 const _histBatch = 4;
-const _histChrono = [...geschiedenis].sort((a, b) => new Date(a) - new Date(b)); let _histNextEnd = _histChrono.length; / exclusive end index for next batch (start with latest)
+const _histChrono = [...geschiedenis].sort((a, b) => new Date(a) - new Date(b)); let _histNextEnd = _histChrono.length; // exclusive end index for next batch (start with latest)
 // recent -> oud
 
 historyButton.addEventListener('click', async () => {
@@ -1369,7 +1369,7 @@ window.onload = () => {
   }
 
   function initStartIndex() {
-    const alle = alleDonderdagenSafe(); / oud -> nieuw
+    const alle = alleDonderdagenSafe(); // oud -> nieuw
     const $dagenLijst = document.getElementById('dagenLijst');
     const futureNodes = $dagenLijst ? [...$dagenLijst.children].filter(n => !n.classList.contains('panel-verleden')) : [];
     let eersteFutureDatum = null;
@@ -1377,7 +1377,7 @@ window.onload = () => {
       if (n.dataset && n.dataset.datum) { eersteFutureDatum = n.dataset.datum; break; }
     }
     if (!eersteFutureDatum) {
-      const alleIdx = alle.length; / alles verleden
+      const alleIdx = alle.length; // alles verleden
       volgendeIndex = alleIdx - 1;
       reachedStart = volgendeIndex < 0;
       return;
@@ -1389,7 +1389,7 @@ window.onload = () => {
 
   async function laadVolgendeBatch() {
     if (reachedStart) return;
-    const alle = alleDonderdagenSafe(); / oud -> nieuw
+    const alle = alleDonderdagenSafe(); // oud -> nieuw
     const $dagenLijst = document.getElementById('dagenLijst');
     if (!$dagenLijst) return;
     const endIndex = Math.max(-1, volgendeIndex - BATCH);

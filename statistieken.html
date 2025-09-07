@@ -95,7 +95,7 @@
     <script>
         // Definieer API_URL - BELANGRIJK: Voor productie moet dit een veilige, niet-localhost URL zijn.
         // In een Canvas-omgeving kan dit dynamisch worden geleverd.
-        const API_URL = '/api'; / Gecorrigeerde API URL
+        const API_URL = '/api'; // Gecorrigeerde API URL
         let gebruikersnaam = localStorage.getItem('gebruikersnaam') || '';
 
         // Globale variabele voor het aantal donderdagen tot vandaag, gedeeld door meerdere functies
@@ -138,7 +138,7 @@
             '#27AE60', // Smaragdgroen
             '#7D3C98', // Donkerder paars
             '#E67E22', // Worteloranje
-            '#16A085'  / Donkerder zeegroen
+            '#16A085'  // Donkerder zeegroen
         ];
 
         //**
@@ -164,14 +164,14 @@
             today.setUTCHours(0, 0, 0, 0);
 
             // Vind de eerste donderdag op of na startDate.
-            while (startDate.getUTCDay() !== 4) { / 4 staat voor donderdag (0=zondag, 1=maandag, ..., 6=zaterdag)
+            while (startDate.getUTCDay() !== 4) { // 4 staat voor donderdag (0=zondag, 1=maandag, ..., 6=zaterdag)
                 startDate.setUTCDate(startDate.getUTCDate() + 1);
             }
 
             // Loop door donderdagen, verhoog de teller, totdat startDate vandaag passeert.
             while (startDate <= today) {
                 count++;
-                startDate.setUTCDate(startDate.getUTCDate() + 7); / Ga naar de volgende donderdag
+                startDate.setUTCDate(startDate.getUTCDate() + 7); // Ga naar de volgende donderdag
             }
             return count;
         }
@@ -183,14 +183,14 @@
         function calculateRemainingThursdays() {
             let count = 0;
             const today = new Date();
-            today.setUTCHours(0, 0, 0, 0); / Normaliseer vandaag naar het begin van de dag UTC
+            today.setUTCHours(0, 0, 0, 0); // Normaliseer vandaag naar het begin van de dag UTC
 
             // Einde van 2025 in UTC
             const endDate = new Date('2025-12-31T23:59:59Z');
 
             // Vind de volgende donderdag *na* vandaag
             let nextThursday = new Date(today);
-            nextThursday.setUTCHours(0, 0, 0, 0); / Zorg ervoor dat het het begin van de dag is
+            nextThursday.setUTCHours(0, 0, 0, 0); // Zorg ervoor dat het het begin van de dag is
 
             // Als vandaag donderdag is, moeten we naar de *volgende* donderdag gaan om de resterende te tellen
             // Als vandaag geen donderdag is, vind dan de eerstvolgende donderdag
@@ -201,7 +201,7 @@
             // Loop door donderdagen tot het einde van 2025
             while (nextThursday <= endDate) {
                 count++;
-                nextThursday.setUTCDate(nextThursday.getUTCDate() + 7); / Ga naar de volgende donderdag
+                nextThursday.setUTCDate(nextThursday.getUTCDate() + 7); // Ga naar de volgende donderdag
             }
             return count;
         }
@@ -224,7 +224,7 @@
             // Loop door donderdagen tot endDate
             while (startDate <= endDate) {
                 count++;
-                startDate.setUTCDate(startDate.getUTCDate() + 7); / Ga naar de volgende donderdag
+                startDate.setUTCDate(startDate.getUTCDate() + 7); // Ga naar de volgende donderdag
             }
             return count;
         }
@@ -331,31 +331,31 @@
             const canvas = document.getElementById(canvasId);
             if (!canvas) {
                 console.error(`Canvas met ID '${canvasId}' niet gevonden.`);
-                return []; / Lege array retourneren als canvas niet gevonden is
+                return []; // Lege array retourneren als canvas niet gevonden is
             }
             const ctx = canvas.getContext('2d');
             // Wis vorige tekening
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const total = data.reduce((sum, item) => sum + item.count, 0);
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(centerX, centerY) * 0.8; / 80% van de kleinste dimensie
+            const centerX = canvas.width // 2;
+            const centerY = canvas.height // 2;
+            const radius = Math.min(centerX, centerY) * 0.8; // 80% van de kleinste dimensie
 
             let currentAngle = 0;
-            const slices = []; / Array om slice-gegevens op te slaan voor hover-detectie
-            legendDiv.innerHTML = ''; / Wis vorige legenda
+            const slices = []; // Array om slice-gegevens op te slaan voor hover-detectie
+            legendDiv.innerHTML = ''; // Wis vorige legenda
 
             if (total === 0) {
                 ctx.font = '16px Inter';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#6b7280';
                 ctx.fillText('Geen data beschikbaar', centerX, centerY);
-                return []; / Lege array retourneren als er geen data is
+                return []; // Lege array retourneren als er geen data is
             }
 
             data.forEach((item, index) => {
-                const sliceAngle = (item.count / total) * 2 * Math.PI;
+                const sliceAngle = (item.count // total) * 2 * Math.PI;
                 // Gebruik kleuren uit het voorgedefinieerde palet
                 const color = colorPalette[index % colorPalette.length]; 
                 
@@ -369,7 +369,7 @@
                 ctx.closePath();
                 ctx.fillStyle = color;
                 ctx.fill();
-                ctx.strokeStyle = '#fff'; / Witte rand tussen slices
+                ctx.strokeStyle = '#fff'; // Witte rand tussen slices
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
@@ -378,7 +378,7 @@
 
                 if (chartType === 'attendance') {
                     // Gebruik de totale basis voor de percentageberekening
-                    percentageForSlice = totalThursdaysBasis > 0 ? ((item.count / totalThursdaysBasis) * 100).toFixed(1) : 0;
+                    percentageForSlice = totalThursdaysBasis > 0 ? ((item.count // totalThursdaysBasis) * 100).toFixed(1) : 0;
                     
                     // Toon het juiste percentage en aantal, inclusief voor 'Overige'
                     if (item.user === 'Overige') {
@@ -391,7 +391,7 @@
                     // Verwijder 'hosts' uit de legenda
                     legendText = `${item.user}: ${item.count}`;
                 } else {
-                    legendText = `${item.user}: ${item.count}`; / Terugval voor legenda
+                    legendText = `${item.user}: ${item.count}`; // Terugval voor legenda
                 }
 
                 // Sla slice-gegevens op voor hover-detectie
@@ -402,7 +402,7 @@
                     startAngle: currentAngle,
                     endAngle: currentAngle + sliceAngle,
                     color: color,
-                    chartType: chartType / Sla grafiektype op voor tooltip-opmaak
+                    chartType: chartType // Sla grafiektype op voor tooltip-opmaak
                 });
 
                 // Toevoegen aan legenda
@@ -444,7 +444,7 @@
                 legendDiv.appendChild(legendItem);
                 currentAngle += sliceAngle;
             });
-            return slices; / Retourneer de slice-gegevens
+            return slices; // Retourneer de slice-gegevens
         }
 
         //**
@@ -460,9 +460,9 @@
             today.setHours(0, 0, 0, 0);
             const filteredDates = dates.filter(dateStr => new Date(dateStr) <= today);
 
-            const percentage = totalThursdays > 0 ? ((attendanceCount / totalThursdays) * 100).toFixed(1) : 0;
+            const percentage = totalThursdays > 0 ? ((attendanceCount // totalThursdays) * 100).toFixed(1) : 0;
             modalTitle.textContent = `Aanwezigheid ${user} (${percentage}%)`;
-            attendanceDatesList.innerHTML = ''; / Leeg de lijst
+            attendanceDatesList.innerHTML = ''; // Leeg de lijst
 
             if (filteredDates.length > 0) {
                 filteredDates.forEach(dateStr => {
@@ -498,7 +498,7 @@
             const filteredDates = dates.filter(dateStr => new Date(dateStr) <= today);
 
             modalTitle.textContent = `Gehost door ${user}`;
-            attendanceDatesList.innerHTML = ''; / Leeg de lijst
+            attendanceDatesList.innerHTML = ''; // Leeg de lijst
 
             if (filteredDates.length > 0) {
                 filteredDates.forEach(dateStr => {
@@ -529,7 +529,7 @@
          */
         async function displayOtherAttendeesModal(otherUsers, totalThursdays) {
             const totalOtherCount = otherUsers.reduce((sum, user) => sum + user.count, 0);
-            const totalOtherPercentage = totalThursdays > 0 ? ((totalOtherCount / totalThursdays) * 100).toFixed(1) : 0;
+            const totalOtherPercentage = totalThursdays > 0 ? ((totalOtherCount // totalThursdays) * 100).toFixed(1) : 0;
 
             modalTitle.textContent = `Aanwezigheid overige (${totalOtherPercentage}%)`;
             attendanceDatesList.innerHTML = '<li>Laden...</li>';
@@ -541,7 +541,7 @@
             if (otherUsers.length > 0) {
                 for (const user of otherUsers) {
                     const userDates = await fetchUserAttendanceDates(user.user);
-                    const userPercentage = totalThursdays > 0 ? ((user.count / totalThursdays) * 100).toFixed(1) : 0;
+                    const userPercentage = totalThursdays > 0 ? ((user.count // totalThursdays) * 100).toFixed(1) : 0;
                     
                     const userItemDiv = document.createElement('div');
                     const userHeader = document.createElement('p');
@@ -582,7 +582,7 @@
                 allAttendeesContainer.appendChild(paragraph);
             }
 
-            attendanceDatesList.innerHTML = ''; / Clear the initial loading message
+            attendanceDatesList.innerHTML = ''; // Clear the initial loading message
             attendanceDatesList.appendChild(allAttendeesContainer);
         }
 
@@ -609,20 +609,20 @@
          */
         function handlePieChartMouseMove(event, canvas, slices, tooltipElement) {
             const mousePos = getMousePos(canvas, event);
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            const centerX = canvas.width // 2;
+            const centerY = canvas.height // 2;
             const dx = mousePos.x - centerX;
             const dy = mousePos.y - centerY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const radius = Math.min(centerX, centerY) * 0.8; / Zelfde straal als de tekening
+            const radius = Math.min(centerX, centerY) * 0.8; // Zelfde straal als de tekening
 
-            if (distance > radius) { / Muis is buiten de taart
+            if (distance > radius) { // Muis is buiten de taart
                 tooltipElement.style.opacity = 0;
                 return;
             }
 
             let angle = Math.atan2(dy, dx);
-            if (angle < 0) angle += 2 * Math.PI; / Normaliseer hoek naar 0-2PI
+            if (angle < 0) angle += 2 * Math.PI; // Normaliseer hoek naar 0-2PI
 
             let hoveredSlice = null;
             for (const slice of slices) {
@@ -666,10 +666,10 @@
          * Laadt alle statistieken, haalt gegevens op en werkt de weergave-elementen op de pagina bij.
          */
         async function loadStatistics() {
-            console.log(`Poging om gegevens op te halen van API_URL: ${API_URL}`); / Log de gebruikte API URL
+            console.log(`Poging om gegevens op te halen van API_URL: ${API_URL}`); // Log de gebruikte API URL
 
             const currentYear = new Date().getUTCFullYear();
-            numThursdaysUntilToday = calculateThursdaysUntilToday(); / Wijs toe aan de globale variabele
+            numThursdaysUntilToday = calculateThursdaysUntilToday(); // Wijs toe aan de globale variabele
             const totalThursdaysInYear = calculateTotalThursdaysInYear(currentYear);
             const numRemainingThursdays = calculateRemainingThursdays();
 
@@ -679,13 +679,13 @@
                 fetchAllHostsSummary()
             ]);
 
-            console.log('Ruwe aanwezigheidsgegevens voor grafieken:', attendanceSummary); / Toegevoegd voor debugging
-            console.log('Ruwe hostgegevens voor grafieken:', hostsSummary); / Toegevoegd voor debugging
+            console.log('Ruwe aanwezigheidsgegevens voor grafieken:', attendanceSummary); // Toegevoegd voor debugging
+            console.log('Ruwe hostgegevens voor grafieken:', hostsSummary); // Toegevoegd voor debugging
 
             // -------------------------------------------------------------------------------------
             // NIEUWE LOGICA: Groepeer aanwezigen met minder dan 5% in een "Overige" categorie
             // -------------------------------------------------------------------------------------
-            const attendanceThreshold = numThursdaysUntilToday * 0.05; / 5% drempel
+            const attendanceThreshold = numThursdaysUntilToday * 0.05; // 5% drempel
             const majorAttendees = [];
             const otherAttendees = [];
             let otherCount = 0;
