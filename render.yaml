@@ -4,6 +4,12 @@ services:
     env: node
     region: frankfurt
     plan: free
-    buildCommand: "npm install"
-    startCommand: "node server.js"
     autoDeploy: true
+    buildCommand: |
+      npm config set registry https://registry.npmjs.org/
+      npm cache clean --force
+      npm ci --no-audit --no-fund --prefer-online || npm install --no-audit --no-fund --prefer-online
+    startCommand: "node server.js"
+    envVars:
+      - key: NPM_CONFIG_CACHE
+        value: /tmp/.npm
